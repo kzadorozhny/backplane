@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package swim;
+
+message ping {
+	string source_node = 1;
+}
+
+message ack {
+	bool alive = 1;
+}
+
+//request to remote ping
+message ping_req {
+	string source_node = 1;
+	string dest_node = 2; //ping this remote node
+}
+
+message swim_message {
+	int64 seq = 1;
+	//one of the following
+	ping ping = 2;
+	ack ack = 3;
+	ping_req ping_req = 4; //response is ack
+}
+
