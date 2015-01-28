@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/apesternikov/backplane/src/gen"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -34,8 +35,8 @@ func TestSendReceive(t *testing.T) {
 	p2.clientConn.SetDeadline(deadline)
 	//addr1, err := parseIpPort("127.0.0.1:1245")
 	addr2 := p2.clientConn.LocalAddr().(*net.UDPAddr)
-	pb1 := &SwimMessage{Seq: 1, Ping: &Ping{}}
-	pb2 := &SwimMessage{}
+	pb1 := &gen.SwimMessage{Seq: 1, Ping: &gen.Ping{}}
+	pb2 := &gen.SwimMessage{}
 	err = p1.sendRequest(addr2, pb1)
 	if err != nil {
 		t.Fatal("Unable to send request: ", err)

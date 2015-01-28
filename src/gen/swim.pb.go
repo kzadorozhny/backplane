@@ -3,7 +3,7 @@
 // DO NOT EDIT!
 
 /*
-Package swim is a generated protocol buffer package.
+Package gen is a generated protocol buffer package.
 
 It is generated from these files:
 	swim.proto
@@ -12,9 +12,10 @@ It has these top-level messages:
 	Ping
 	Ack
 	PingReq
+	DisseminationUpdateMsg
 	SwimMessage
 */
-package swim
+package gen
 
 import proto "github.com/golang/protobuf/proto"
 
@@ -47,12 +48,27 @@ func (m *PingReq) Reset()         { *m = PingReq{} }
 func (m *PingReq) String() string { return proto.CompactTextString(m) }
 func (*PingReq) ProtoMessage()    {}
 
+type DisseminationUpdateMsg struct {
+	Timestamp int64  `protobuf:"varint,1,opt,name=timestamp" json:"timestamp,omitempty"`
+	NodeName  string `protobuf:"bytes,2,opt,name=node_name" json:"node_name,omitempty"`
+	Alive     bool   `protobuf:"varint,3,opt,name=alive" json:"alive,omitempty"`
+	Origin    string `protobuf:"bytes,4,opt,name=origin" json:"origin,omitempty"`
+}
+
+func (m *DisseminationUpdateMsg) Reset()         { *m = DisseminationUpdateMsg{} }
+func (m *DisseminationUpdateMsg) String() string { return proto.CompactTextString(m) }
+func (*DisseminationUpdateMsg) ProtoMessage()    {}
+
 type SwimMessage struct {
 	Seq int64 `protobuf:"varint,1,opt,name=seq" json:"seq,omitempty"`
 	// one of the following
 	Ping    *Ping    `protobuf:"bytes,2,opt,name=ping" json:"ping,omitempty"`
 	Ack     *Ack     `protobuf:"bytes,3,opt,name=ack" json:"ack,omitempty"`
 	PingReq *PingReq `protobuf:"bytes,4,opt,name=ping_req" json:"ping_req,omitempty"`
+	// dissemination
+	DisseminationUpdates []*DisseminationUpdateMsg `protobuf:"bytes,5,rep,name=dissemination_updates" json:"dissemination_updates,omitempty"`
+	SourceSeq            int64                     `protobuf:"varint,6,opt,name=source_seq" json:"source_seq,omitempty"`
+	KnownDestSeq         int64                     `protobuf:"varint,7,opt,name=known_dest_seq" json:"known_dest_seq,omitempty"`
 }
 
 func (m *SwimMessage) Reset()         { *m = SwimMessage{} }
@@ -76,6 +92,13 @@ func (m *SwimMessage) GetAck() *Ack {
 func (m *SwimMessage) GetPingReq() *PingReq {
 	if m != nil {
 		return m.PingReq
+	}
+	return nil
+}
+
+func (m *SwimMessage) GetDisseminationUpdates() []*DisseminationUpdateMsg {
+	if m != nil {
+		return m.DisseminationUpdates
 	}
 	return nil
 }

@@ -6,8 +6,13 @@
 // http://www.cs.cornell.edu/~asdas/research/dsn02-swim.pdf
 // with several differences:
 // - down nodes are not removed from the list but marked as down to handle netsplits
-
-//go:generate protoc --go_out=. swim.proto
+//
+// Dissemination:
+// All incoming updates are applied to local in-memory state.
+// If the incoming update is new to the system it is updated to the outbound log.
+// Each item in the outbound log has local sequence number. Each node stores last seen sequence numbers from all remote nodes
+// as well as last local seq confirmed by remote node.
+// Each ping request contains remote log fetch request after particluar (last seen) seq
 
 package swim
 
@@ -15,31 +20,79 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/apesternikov/backplane/src/gen"
 	"github.com/golang/glog"
 	"github.com/golang/protobuf/proto"
 )
 
-var protoPreiod = 200 * time.Millisecond
-var rtt = 20 * time.Millisecond
+var protoPreiod = 1000 * time.Millisecond
+var rtt = 200 * time.Millisecond
+
+var now func() int64 = func() int64 {
+	return time.Now().UnixNano()
+}
 
 type node struct {
-	addr *net.UDPAddr
-	name string
-	isUp bool
+	addr        *net.UDPAddr
+	name        string
+	lastChanged time.Time
+	update      *gen.DisseminationUpdateMsg
+}
+
+func NewNode(hostport string) (n *node, err error) {
+	a, err := parseIpPort(hostport)
+	if err != nil {
+		return nil, err
+	}
+	return &node{addr: a, name: hostport}, nil
+}
+
+func (n *node) setFromUpdate(update *gen.DisseminationUpdateMsg) (updated bool) {
+	if n.update == nil || update.Alive != n.update.Alive {
+		n.update = update
+		n.lastChanged = time.Now()
+		glog.V(1).Info("node remote state ", n)
+		return true
+	}
+	return false
+}
+
+//mark node as up and (re)generate update message if needed
+func (n *node) setUp(isUp bool) (updated bool) {
+	if n.update == nil || isUp != n.update.Alive {
+		update := &gen.DisseminationUpdateMsg{
+			Timestamp: now(),
+			NodeName:  n.name,
+			Alive:     isUp,
+		}
+		n.update = update
+		n.lastChanged = time.Now()
+		glog.V(1).Info("node local state ", n)
+		return true
+	}
+	return false
+}
+
+func (n *node) Up() bool {
+	if n.update != nil {
+		return n.update.Alive
+	}
+	return false
 }
 
 func (n *node) String() string {
 	var state string
-	if n.isUp {
+	if n.Up() {
 		state = "UP"
 	} else {
 		state = "DOWN"
 	}
-	return fmt.Sprintf("Node %s %s", n.addr, state)
+	return fmt.Sprintf("Node %s %s changed %s %s", n.addr, state, n.lastChanged.Format(time.RFC1123), n.update)
 }
 
 type Swim struct {
@@ -51,6 +104,16 @@ type Swim struct {
 	mu       sync.Mutex
 	nodes    []*node //all nodes in the network excluding itself. TODO: split into dclocal and dcremote
 	nodesmap map[string]*node
+	updates  []*gen.DisseminationUpdateMsg //current implementation send all updates.
+}
+
+func (s *Swim) HandleStatus(rw http.ResponseWriter, req *http.Request) {
+	fmt.Fprintf(rw, "name: %s\n", s.name)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, n := range s.nodes {
+		fmt.Fprintf(rw, "%s\n", n)
+	}
 }
 
 var badip = errors.New("Unable to parse IP")
@@ -95,12 +158,11 @@ func (s *Swim) AddHosts(hosts ...string) {
 	defer s.mu.Unlock()
 	for _, host := range hosts {
 		if _, ok := s.nodesmap[host]; !ok {
-			a, err := parseIpPort(host)
+			n, err := NewNode(host)
 			if err != nil {
-				glog.Errorf("Unable to parse host %s", host)
+				glog.Errorf("Unable to create node %s: %s", host, err)
 				continue
 			}
-			n := &node{addr: a, name: host}
 			s.nodes = append(s.nodes, n)
 			s.nodesmap[host] = n
 		}
@@ -112,11 +174,10 @@ func (s *Swim) getHost(host string) (n *node, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if n, ok := s.nodesmap[host]; !ok {
-		a, err := parseIpPort(host)
+		n, err := NewNode(host)
 		if err != nil {
 			return nil, err
 		}
-		n := &node{addr: a, name: host}
 		s.nodes = append(s.nodes, n)
 		s.nodesmap[host] = n
 		return n, nil
@@ -126,6 +187,7 @@ func (s *Swim) getHost(host string) (n *node, err error) {
 }
 
 func (s *Swim) Serve() (err error) {
+	go s.client.protoLoop()
 	for {
 		if err = s.serveOnce(); err != nil {
 			return
@@ -134,7 +196,7 @@ func (s *Swim) Serve() (err error) {
 }
 
 func (s *Swim) serveOnce() error {
-	var in, out SwimMessage
+	var in, out gen.SwimMessage
 	// out.Reset()
 	n, addr, err := s.serverConn.ReadFromUDP(s.client.buf[0:])
 	if err != nil {
@@ -149,6 +211,8 @@ func (s *Swim) serveOnce() error {
 		return nil //ignore error, continue loop
 	}
 	glog.V(2).Info("swim serving inpkt ", &in)
+	//first, apply all db updates
+	s.onUpdatePkts(in.DisseminationUpdates)
 	out.Seq = in.Seq
 	switch {
 	case in.Ping != nil:
@@ -156,6 +220,8 @@ func (s *Swim) serveOnce() error {
 	case in.PingReq != nil:
 		out.Ack = s.servePingReq(in.PingReq)
 	}
+	//add db
+	out.DisseminationUpdates = s.updates
 	bv, err := proto.Marshal(&out)
 	if err != nil {
 		glog.Error("error marshalling swim response: ", err)
@@ -177,35 +243,39 @@ func (s *Swim) serveOnce() error {
 	return nil
 }
 
-func (s *Swim) servePing(pkt *Ping) *Ack {
+func (s *Swim) servePing(pkt *gen.Ping) *gen.Ack {
 	// first, ping means the source node exists and alive
 	n, err := s.getHost(pkt.SourceNode)
 	if err != nil {
 		glog.Error("getHost: ", err)
 		return nil
 	}
-	n.isUp = true
-	return &Ack{Alive: true}
+	if n.setUp(true) {
+		s.genUpdates()
+	}
+	return &gen.Ack{Alive: true}
 }
 
-func (s *Swim) servePingReq(pkt *PingReq) *Ack {
+func (s *Swim) servePingReq(pkt *gen.PingReq) *gen.Ack {
 	// first, ping means the source node exists and alive
 	src, err := s.getHost(pkt.SourceNode)
 	if err != nil {
 		glog.Error("getHost: ", err)
 		return nil
 	}
-	src.isUp = true
+	if src.setUp(true) {
+		s.genUpdates()
+	}
 	//get the dest node
 	dst, err := s.getHost(pkt.DestNode)
 	if err != nil {
 		glog.Error("getHost: ", err)
 		return nil
 	}
-	ack, err := s.client.pingack(dst, &Ping{s.name})
+	ack, err := s.client.pingack(dst, &gen.Ping{s.name})
 	if err != nil {
 		glog.Error("pingack: ", err)
-		return &Ack{Alive: false}
+		return &gen.Ack{Alive: false}
 	}
 	return ack
 }
@@ -218,4 +288,52 @@ func (s *Swim) Close() {
 	if s.client != nil {
 		s.client.close()
 	}
+}
+
+//db functions
+
+//update single node. assumes s is locked
+//returns true if data is updated
+func (s *Swim) onUpdatePkt(pkt *gen.DisseminationUpdateMsg) bool {
+	var err error
+	n, ok := s.nodesmap[pkt.NodeName]
+	if !ok {
+		n, err = NewNode(pkt.NodeName)
+		if err != nil {
+			glog.Error("Unable to update node with '%s': %s", pkt, err)
+			return false
+		}
+		s.nodes = append(s.nodes, n)
+		s.nodesmap[pkt.NodeName] = n
+	}
+	if n.setFromUpdate(pkt) {
+		// the info in update is new, update the record
+		s.genUpdates()
+		return true
+	}
+	return false
+}
+
+//regenerate outbound updates
+//assumes mutex is locked
+func (s *Swim) genUpdates() {
+	s.updates = s.updates[0:0]
+	for _, n := range s.nodes {
+		if n.update != nil {
+			s.updates = append(s.updates, n.update)
+		}
+	}
+
+}
+
+func (s *Swim) onUpdatePkts(pkts []*gen.DisseminationUpdateMsg) (updated bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, pkt := range pkts {
+		updated = updated || s.onUpdatePkt(pkt)
+	}
+	if updated {
+		s.genUpdates()
+	}
+	return
 }

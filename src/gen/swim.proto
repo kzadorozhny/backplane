@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package gen;
+
+message ping {
+	string source_node = 1;
+}
+
+message ack {
+	bool alive = 1;
+}
+
+//request to remote ping
+message ping_req {
+	string source_node = 1;
+	string dest_node = 2; //ping this remote node
+}
+
+message dissemination_update_msg {
+	int64 timestamp = 1;
+	string node_name = 2; //key
+	bool alive = 3;
+	string origin = 4; //node iriginated this update
+}
+
+message swim_message {
+	int64 seq = 1;
+	//one of the following
+	ping ping = 2;
+	ack ack = 3;
+	ping_req ping_req = 4; //response is ack
+
+	// dissemination
+	repeated dissemination_update_msg dissemination_updates = 5;
+	int64 source_seq = 6; //updated last local seq
+	int64 known_dest_seq = 7; //may act as dissemination update request: ping set this field 
+}
+

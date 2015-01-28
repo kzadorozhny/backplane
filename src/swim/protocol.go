@@ -7,6 +7,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/apesternikov/backplane/src/gen"
 	"github.com/golang/glog"
 	"github.com/golang/protobuf/proto"
 )
@@ -18,7 +19,7 @@ type swimmer struct {
 	clientConn *net.UDPConn
 	seq        int64
 	buf        [1500]byte
-	pb         SwimMessage
+	pb         gen.SwimMessage
 }
 
 func newSwimmer(s *Swim) (ret *swimmer, err error) {
@@ -50,55 +51,82 @@ func shuffle(a []*node) {
 
 var noShuffleForTest = false
 
+func (s *swimmer) protoLoop() {
+	for {
+		glog.V(4).Info("running protoCycle")
+		c := time.After(protoPreiod)
+		s.protoCycle()
+		<-c
+	}
+}
+
 //select random peer and perform communication with it
 func (s *swimmer) protoCycle() {
 	//select all nodes and randomize the list
-	var nodes []*node
 	s.s.mu.Lock()
+	var nodes []*node = make([]*node, len(s.s.nodes))
 	copy(nodes, s.s.nodes)
 	s.s.mu.Unlock()
 	if !noShuffleForTest {
 		shuffle(nodes)
 	}
 	for _, n := range nodes {
-		s.protoOnce(n)
+		if n.name != s.s.name {
+			c := time.After(rtt * 3)
+			s.protoOnce(n)
+			<-c
+		}
 	}
 }
 
 //run protocol with specified node once.
 func (s *swimmer) protoOnce(target *node) {
-	ack, err := s.pingack(target, &Ping{SourceNode: s.s.name})
+	glog.V(4).Infof("Running proto for node %s", target)
+	ack, err := s.pingack(target, &gen.Ping{SourceNode: s.s.name})
 	if err != nil {
 		glog.Errorf("Ping to %s error: %s", target, err)
 		//select nodes in up state
 		s.s.mu.Lock()
 		upnodes := make([]*node, 0, len(s.s.nodes))
 		for _, n := range s.s.nodes {
-			if n != target && n.isUp {
+			if n != target && n.Up() {
 				upnodes = append(upnodes, n)
 			}
 		}
 		s.s.mu.Unlock()
 		if len(upnodes) == 0 {
-			glog.Error("ping failed with '%s' and no nodes to proxy ping request", err)
+			glog.Errorf("ping failed with '%s' and no nodes to proxy ping request", err)
+			if target.setUp(false) {
+				s.s.genUpdates()
+			}
 			return
 		}
-		//select 2 nodes
+		//select 2 nodes to act as proxies
 		proxy1 := upnodes[rand.Intn(len(upnodes))]
 		proxy2 := upnodes[rand.Intn(len(upnodes))]
-		ack, err = s.pingreqack(proxy1, proxy2, &PingReq{SourceNode: s.s.name, DestNode: target.name})
+		ack, err = s.pingreqack(proxy1, proxy2, &gen.PingReq{SourceNode: s.s.name, DestNode: target.name})
 		if err != nil {
 			glog.Errorf("Unable to proxy ping to %s: %s", target, err)
+			if target.setUp(false) {
+				s.s.genUpdates()
+			}
 			return
 		}
 	}
-	target.isUp = ack.Alive
+	if ack == nil {
+		//not
+	}
+	if target.setUp(ack.Alive) {
+		s.s.genUpdates()
+	}
 	//process ack
 }
 
 //set sequence in req packet, marshal and send it to specified node
 
-func (s *swimmer) sendRequest(addr *net.UDPAddr, req *SwimMessage) error {
+func (s *swimmer) sendRequest(addr *net.UDPAddr, req *gen.SwimMessage) error {
+	//add dissemination info to all outbound pkt
+	req.DisseminationUpdates = s.s.updates
 	bv, err := proto.Marshal(req)
 	if err != nil {
 		return err
@@ -120,7 +148,7 @@ func (s *swimmer) sendRequest(addr *net.UDPAddr, req *SwimMessage) error {
 // receive response with certain sequence id. drop any responses with wring seq id
 //caller must set a deadline on the socket
 // TODO: consider processing of pkts with out of order seq id
-func (s *swimmer) receiveResponse(seq int64, to *SwimMessage) (resp *SwimMessage, err error) {
+func (s *swimmer) receiveResponse(seq int64, to *gen.SwimMessage) (resp *gen.SwimMessage, err error) {
 	for {
 		glog.V(2).Infof("waiting for pkt")
 		n, _, err := s.clientConn.ReadFromUDP(s.buf[0:])
@@ -134,7 +162,8 @@ func (s *swimmer) receiveResponse(seq int64, to *SwimMessage) (resp *SwimMessage
 			return nil, err
 		}
 		glog.V(2).Info("received pkt ", to)
-
+		//process updates even if seq is out of order
+		s.s.onUpdatePkts(to.DisseminationUpdates)
 		if to.Seq == seq {
 			return to, nil
 		}
@@ -143,10 +172,10 @@ func (s *swimmer) receiveResponse(seq int64, to *SwimMessage) (resp *SwimMessage
 }
 
 //send ping and await ack
-func (s *swimmer) pingack(n *node, pkt *Ping) (resp *Ack, err error) {
+func (s *swimmer) pingack(n *node, pkt *gen.Ping) (resp *gen.Ack, err error) {
 	s.clientConn.SetDeadline(time.Now().Add(rtt))
 	s.seq = s.seq + 1
-	s.pb = SwimMessage{Seq: s.seq, Ping: pkt}
+	s.pb = gen.SwimMessage{Seq: s.seq, Ping: pkt, DisseminationUpdates: s.s.updates} //TODO: sync?
 	err = s.sendRequest(n.addr, &s.pb)
 	if err != nil {
 		return
@@ -155,15 +184,16 @@ func (s *swimmer) pingack(n *node, pkt *Ping) (resp *Ack, err error) {
 	if err != nil {
 		return
 	}
+	s.s.onUpdatePkts(r.DisseminationUpdates)
 	return r.Ack, nil
 }
 
 //send pingreq to 2 nodes and await first ack. second packet would be skipped
 //by receiver as oos on the next read
-func (s *swimmer) pingreqack(n1, n2 *node, pkt *PingReq) (resp *Ack, err error) {
+func (s *swimmer) pingreqack(n1, n2 *node, pkt *gen.PingReq) (resp *gen.Ack, err error) {
 	s.clientConn.SetDeadline(time.Now().Add(rtt * 2))
 	s.seq = s.seq + 1
-	s.pb = SwimMessage{Seq: s.seq, PingReq: pkt}
+	s.pb = gen.SwimMessage{Seq: s.seq, PingReq: pkt}
 	var err1, err2 error
 	err1 = s.sendRequest(n1.addr, &s.pb)
 	if err1 != nil {
@@ -179,5 +209,6 @@ func (s *swimmer) pingreqack(n1, n2 *node, pkt *PingReq) (resp *Ack, err error) 
 	if err != nil {
 		return
 	}
+	s.s.onUpdatePkts(r.DisseminationUpdates)
 	return r.Ack, nil
 }

@@ -3,6 +3,8 @@ package swim
 import (
 	"net"
 
+	"github.com/apesternikov/backplane/src/gen"
+
 	"testing"
 )
 
@@ -81,23 +83,13 @@ func TestPing(t *testing.T) {
 		t.Fatal("Unexpected sizes: ", len(s2.nodes), len(s2.nodesmap))
 	}
 
-	cli, err := newSwimmer(s2)
-	if err != nil {
-		t.Error("Unexpected error ", err)
-	}
-	defer cli.close()
-	err = cli.sendRequest(s2.nodes[0].addr, &SwimMessage{Seq: 1, Ping: &Ping{SourceNode: s2.name}})
+	err = s2.client.sendRequest(s2.nodes[0].addr, &gen.SwimMessage{Seq: 1, Ping: &gen.Ping{SourceNode: s2.name}})
 	if err != nil {
 		t.Error("Unexpected error ", err)
 	}
 	s1.serveOnce()
 
-	err = cli.sendRequest(s2.nodes[0].addr, &SwimMessage{Seq: 1, Ping: &Ping{SourceNode: s2.name}})
-	if err != nil {
-		t.Error("Unexpected error ", err)
-	}
-
-	msg, err := cli.receiveResponse(1, &SwimMessage{})
+	msg, err := s2.client.receiveResponse(1, &gen.SwimMessage{})
 	if msg == nil || err != nil {
 		t.Error("Unexpected error ", err)
 	}
@@ -134,19 +126,14 @@ func TestPingReqToUpNode(t *testing.T) {
 		t.Fatal("Unexpected sizes: ", len(s2.nodes), len(s2.nodesmap))
 	}
 
-	cli, err := newSwimmer(s2)
-	if err != nil {
-		t.Error("Unexpected error ", err)
-	}
-	defer cli.close()
-	err = cli.sendRequest(s2.nodes[0].addr, &SwimMessage{Seq: 2, PingReq: &PingReq{SourceNode: s2.name, DestNode: s3.name}})
+	err = s2.client.sendRequest(s2.nodes[0].addr, &gen.SwimMessage{Seq: 2, PingReq: &gen.PingReq{SourceNode: s2.name, DestNode: s3.name}})
 	if err != nil {
 		t.Error("Unexpected error ", err)
 	}
 	go s1.serveOnce()
 	go s3.serveOnce()
 
-	msg, err := cli.receiveResponse(2, &SwimMessage{})
+	msg, err := s2.client.receiveResponse(2, &gen.SwimMessage{})
 	if msg == nil || err != nil {
 		t.Error("Unexpected error ", err)
 	}
@@ -184,19 +171,14 @@ func TestPingReqToDownNode(t *testing.T) {
 		t.Fatal("Unexpected sizes: ", len(s2.nodes), len(s2.nodesmap))
 	}
 
-	cli, err := newSwimmer(s2)
-	if err != nil {
-		t.Error("Unexpected error ", err)
-	}
-	defer cli.close()
-	err = cli.sendRequest(s2.nodes[0].addr, &SwimMessage{Seq: 2, PingReq: &PingReq{SourceNode: s2.name, DestNode: "127.0.0.1:1236"}})
+	err = s2.client.sendRequest(s2.nodes[0].addr, &gen.SwimMessage{Seq: 2, PingReq: &gen.PingReq{SourceNode: s2.name, DestNode: "127.0.0.1:1236"}})
 	if err != nil {
 		t.Error("Unexpected error ", err)
 	}
 	go s1.serveOnce()
 	// go s3.serveOnce()
 
-	msg, err := cli.receiveResponse(2, &SwimMessage{})
+	msg, err := s2.client.receiveResponse(2, &gen.SwimMessage{})
 	if msg == nil || err != nil {
 		t.Error("Unexpected error ", err)
 	}
