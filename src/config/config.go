@@ -1,49 +1,49 @@
 package config
 
 import (
-	"flag"
 	"fmt"
-	"log"
-	"net"
-	"strings"
+
+	"github.com/golang/protobuf/proto"
 )
 
-var (
-	Port      = flag.Int("port", 17888, "Port for node")
-	PrivateIp = flag.String("node_ip", autoconfPrivateIp(), "Private IP if autoconf override is required")
-	Seed      = flag.String("seed", "", "ip:port of a seed node")
+//go:generate protoc --go_out=. config.proto
+//TODO: fail on duplicates
+func Validate(cf *Config) error {
+	backends := make(map[string]*HttpBackend)
+	for _, b := range cf.HttpBackend {
+		if b.Name == "" {
+			return fmt.Errorf("backend has empty name")
+		}
+		backends[b.Name] = b
+	}
+	for _, f := range cf.HttpFrontend {
+		for _, h := range f.Host {
+			for _, b := range h.Handler {
+				if b.Path == "" {
+					return fmt.Errorf("binding with empty path")
+				}
+				if len(b.BackendName) == 0 {
+					return fmt.Errorf("binding %s has no backends configured", b.Path)
+				}
+				if _, ok := backends[b.BackendName]; !ok {
+					return fmt.Errorf("binding %s: unknown backend %s", b.Path, b.BackendName)
+				}
+			}
 
-	//filled out by Configure()
-	NodeId string
-)
-
-func Configure() {
-	NodeId = fmt.Sprintf("%s:%d", *PrivateIp, *Port)
+		}
+	}
+	return nil
 }
 
-// Naive implementation of private network determination
-//TODO: replace with something more sane
-func isPrivateIp(ip string) bool {
-	return strings.HasPrefix(ip, "192.168.") || strings.HasPrefix(ip, "10.")
-}
-
-//configure node id from
-func autoconfPrivateIp() string {
-	ifv, err := net.InterfaceAddrs()
+func FromText(textcf string) (*Config, error) {
+	cf := new(Config)
+	err := proto.UnmarshalText(textcf, cf)
 	if err != nil {
-		log.Printf("Unable to obtain interface addrs: %s", err)
-		return "unknown"
+		return nil, err
 	}
-	for _, iface := range ifv {
-		if !isPrivateIp(iface.String()) {
-			continue
-		}
-		ip, _, err := net.ParseCIDR(iface.String())
-		if err != nil {
-			log.Printf("Unable to parse network interface address '%s'", iface.String())
-			continue
-		}
-		return ip.String()
+	err = Validate(cf)
+	if err != nil {
+		return nil, err
 	}
-	return "unknown"
+	return cf, nil
 }

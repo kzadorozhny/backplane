@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package config;
+
+message http_handler {
+	// path matching rules are explained here http://golang.org/pkg/net/http/#ServeMux
+	string path = 1;
+	string backend_name = 2;	
+}
+
+message http_frontend {
+	message vhost {
+		bool default = 1; //this vhost is default
+		repeated string domain = 2;
+		repeated http_handler handler = 3;
+	}
+	string name = 1; 			//required
+	string bind_address = 2; 	// required
+	repeated vhost host = 3;
+}
+
+message server {
+	string address = 1;
+	int64 weight = 2; //unused yet
+	int64 maxconn = 3; //unused yet
+}
+
+message http_backend {
+	string name = 1;
+	repeated server server = 2;
+}
+
+message config {
+	repeated http_frontend http_frontend = 1;
+	repeated http_backend http_backend = 2;
+}

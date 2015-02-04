@@ -2,27 +2,33 @@ package main
 
 import (
 	"flag"
-	"net/http"
+	"io/ioutil"
 
 	"github.com/golang/glog"
 
+	"github.com/apesternikov/backplane/src/backplane"
 	"github.com/apesternikov/backplane/src/config"
-	"github.com/apesternikov/backplane/src/swim"
 )
+
+var cf = flag.String("c", "backplaned.conf", "Config file location")
 
 func main() {
 	flag.Parse()
-	config.Configure()
-	glog.Infof("node id %s", config.NodeId)
-	s, err := swim.NewSwim(config.NodeId)
+	glog.Infof("using config file %s", *cf)
+	textcf, err := ioutil.ReadFile(*cf)
 	if err != nil {
-		glog.Fatal("Unable to create swim: ", err)
+		glog.Fatalf("Unable to read config file: %s", err)
 	}
-	if *config.Seed != "" {
-		s.AddHosts(*config.Seed)
+	cfg, err := config.FromText(string(textcf))
+	if err != nil {
+		glog.Fatalf("Unable to parse config file: %s", err)
 	}
-	http.HandleFunc("/swim", s.HandleStatus)
-	go s.Serve()
-	glog.Infof("status page http://%s/swim", config.NodeId)
-	http.ListenAndServe(config.NodeId, nil)
+	b := &backplane.Backplane{}
+	err = b.Configure(cfg)
+	if err != nil {
+		glog.Fatalf("Unable to create backplane: %s", err)
+	}
+
+	var done chan struct{}
+	<-done
 }
