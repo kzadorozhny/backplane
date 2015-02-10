@@ -3,6 +3,7 @@ package backplane
 import (
 	"errors"
 	"net"
+	"sync/atomic"
 	"time"
 )
 
@@ -13,7 +14,8 @@ import (
 
 type StoppableListener struct {
 	*net.TCPListener
-	stop chan int //Channel used only to indicate listener should shutdown. listener will close it after the shutdown
+	AcceptedCnt int64
+	stop        chan int //Channel used only to indicate listener should shutdown. listener will close it after the shutdown
 }
 
 func NewStoppableListener(l *net.TCPListener) *StoppableListener {
@@ -47,6 +49,7 @@ func (sl *StoppableListener) Accept() (net.Conn, error) {
 				continue
 			}
 		}
+		atomic.AddInt64(&sl.AcceptedCnt, 1)
 		tc.SetKeepAlive(true)
 		tc.SetKeepAlivePeriod(3 * time.Minute)
 

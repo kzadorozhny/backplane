@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Statistics Report for Backplane</title>
+	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
+	<style type="text/css"><!--
+	body { font-family: arial, helvetica, sans-serif; font-size: 12px; font-weight: normal; color: black; background: white;}
+	th,td { font-size: 10px;}
+	h1 { font-size: x-large; margin-bottom: 0.5em;}
+	h2 { font-family: helvetica, arial; font-size: x-large; font-weight: bold; font-style: italic; color: #6020a0; margin-top: 0em; margin-bottom: 0em;}
+	h3 { font-family: helvetica, arial; font-size: 16px; font-weight: bold; color: #b00040; background: #e8e8d0; margin-top: 0em; margin-bottom: 0em;}
+	li { margin-top: 0.25em; margin-right: 2em;}
+	.hr {margin-top: 0.25em; border-color: black; border-bottom-style: solid;}
+	.titre	{background: #20D0D0;color: #000000; font-weight: bold; text-align: center;}
+	.total	{background: #20D0D0;color: #ffff80;}
+	.frontend	{background: #e8e8d0;}
+	.vhost	{background: #d0d0d0;}
+	.socket	{background: #d0d0d0;}
+	.backend	{background: #e8e8d0;}
+	.active0	{background: #ff9090;}
+	.active1	{background: #ff9090;}
+	.active2	{background: #ffd020;}
+	.active3	{background: #ffffa0;}
+	.active4	{background: #c0ffc0;}
+	.active5	{background: #ffffa0;}
+	.active6	{background: #20a0ff;}
+	.active7	{background: #ffffa0;}
+	.active8 {background: #20a0FF;}
+	.active9	{background: #e0e0e0;}
+	.backup0	{background: #ff9090;}
+	.backup1	{background: #ff9090;}
+	.backup2	{background: #ff80ff;}
+	.backup3	{background: #c060ff;}
+	.backup4	{background: #b0d0ff;}
+	.backup5	{background: #c060ff;}
+	.backup6	{background: #90b0e0;}
+	.backup7	{background: #c060ff;}
+	.backup8	{background: #cc9900;}
+	.backup9	{background: #e0e0e0;}
+	.maintain	{background: #c07820;}
+	/*.rls      {letter-spacing: 0.2em; margin-right: 1px;}*/
+
+	a.px:link {color: #ffff40; text-decoration: none;}a.px:visited {color: #ffff40; text-decoration: none;}a.px:hover {color: #ffffff; text-decoration: none;}a.lfsb:link {color: #000000; text-decoration: none;}a.lfsb:visited {color: #000000; text-decoration: none;}a.lfsb:hover {color: #505050; text-decoration: none;}
+	table.tbl { border-collapse: collapse; border-style: none;}
+	table.tbl td { text-align: right; border-width: 1px 1px 1px 1px; border-style: solid solid solid solid; padding: 2px 3px; border-color: gray; white-space: nowrap;}
+	table.tbl td.ac { text-align: center;}
+	table.tbl td.al { text-align: left;}
+	table.tbl th { border-width: 1px; border-style: solid solid solid solid; border-color: gray;}
+	table.tbl th.pxname { background: #b00040; color: #ffff40; font-weight: bold; border-style: solid solid none solid; padding: 2px 3px; white-space: nowrap;}
+	table.tbl th.empty { border-style: none; empty-cells: hide; background: white;}
+	table.tbl th.desc { background: white; border-style: solid solid none solid; text-align: left; padding: 2px 3px;}
+
+	table.lgd { border-collapse: collapse; border-width: 1px; border-style: none none none solid; border-color: black;}
+	table.lgd td { border-width: 1px; border-style: solid solid solid solid; border-color: gray; padding: 2px;}
+	table.lgd td.noborder { border-style: none; padding: 2px; white-space: nowrap;}
+	table.det { border-collapse: collapse; border-style: none; }
+	table.det th { text-align: left; border-width: 0px; padding: 0px 1px 0px 0px; font-style:normal;font-size:11px;font-weight:bold;font-family: sans-serif;}
+	table.det td { text-align: right; border-width: 0px; padding: 0px 0px 0px 4px; white-space: nowrap; font-style:normal;font-size:11px;font-weight:normal;}
+	u {text-decoration:none; border-bottom: 1px dotted black;}
+	div.tips {
+		display:block;
+		visibility:hidden;
+		z-index:2147483647;
+		position:absolute;
+		padding:2px 4px 3px;
+		background:#f0f060; color:#000000;
+		border:1px solid #7040c0;
+		white-space:nowrap;
+		font-style:normal;font-size:11px;font-weight:normal;
+		-moz-border-radius:3px;-webkit-border-radius:3px;border-radius:3px;
+		-moz-box-shadow:gray 2px 2px 3px;-webkit-box-shadow:gray 2px 2px 3px;box-shadow:gray 2px 2px 3px;
+	}
+	u:hover div.tips {visibility:visible;}
+-->
+</style>
+</head>
+<body>
+	<h1>
+		<a href="http://www.haproxy.org/" style="text-decoration: none;">Backplane version XXXX, released XXXXXX</a>
+	</h1>
+	<h2>Statistics Report for pid 65396</h2>
+	<hr width="100%" class="hr">
+	<h3>&gt; General process information</h3>
+	<table border=0>
+		<tr>
+			<td align="left" nowrap width="1%">
+				<br> <b>pid =</b>
+				65396 (process #1, nbproc = 1)
+				<br> <b>uptime =</b>
+				17d 8h47m24s
+				<br>
+				<b>system limits:</b>
+				memmax = unlimited; ulimit-n = 8208
+				<br>
+				<b>maxsock =</b>
+				8208;
+				<b>maxconn =</b>
+				4096;
+				<b>maxpipes =</b>
+				0
+				<br>
+				current conns = 1; current pipes = 0/0; conn rate = 2/sec
+				<br>
+				Running tasks: 1/11; idle = 56 %
+				<br></td>
+			<td align="center" nowrap>
+				<table class="lgd">
+					<tr>
+						<td class="active4">&nbsp;</td>
+						<td class="noborder">active UP</td>
+						<td class="backup4">&nbsp;</td>
+						<td class="noborder">backup UP</td>
+					</tr>
+					<tr>
+						<td class="active3"></td>
+						<td class="noborder">active UP, going down</td>
+						<td class="backup3"></td>
+						<td class="noborder">backup UP, going down</td>
+					</tr>
+					<tr>
+						<td class="active2"></td>
+						<td class="noborder">active DOWN, going up</td>
+						<td class="backup2"></td>
+						<td class="noborder">backup DOWN, going up</td>
+					</tr>
+					<tr>
+						<td class="active0"></td>
+						<td class="noborder">active or backup DOWN &nbsp;</td>
+						<td class="active9"></td>
+						<td class="noborder">not checked</td>
+					</tr>
+					<tr>
+						<td class="maintain"></td>
+						<td class="noborder" colspan="3">active or backup DOWN for maintenance (MAINT) &nbsp;</td>
+					</tr>
+					<tr>
+						<td class="active8"></td>
+						<td class="noborder" colspan="3">active or backup SOFT STOPPED for maintenance &nbsp;</td>
+					</tr>
+				</table>
+				Note: "NOLB"/"DRAIN" = UP with load-balancing disabled.
+			</td>
+			<td align="left" valign="top" nowrap width="1%">
+				<b>Display option:</b>
+				<ul style="margin-top: 0.25em;">
+					<li>
+						<form method="GET" action="/admin/stats">
+							Scope :
+							<input value="" name="scope" size="8" maxlength="20" tabindex="1"/>
+						</form>
+					</li>
+					<li>
+						<a href="/admin/stats;up">Hide 'DOWN' servers</a>
+						<br></li>
+					<li>
+						<a href="/admin/stats">Refresh now</a>
+						<br></li>
+					<li>
+						<a href="/admin/stats;csv">CSV export</a>
+					</li>
+					<br></ul>
+			</td>
+			<td align="left" valign="top" nowrap width="1%">
+				<b>External resources:</b>
+				<ul style="margin-top: 0.25em;">
+					<li>
+						<a href="http://www.haproxy.org/">Primary site</a>
+						<br></li>
+					<li>
+						<a href="http://www.haproxy.org/#down">Updates (v1.5)</a>
+						<br></li>
+					<li>
+						<a href="http://www.haproxy.org/#docs">Online manual</a>
+						<br></li>
+				</ul>
+			</td>
+		</tr>
+	</table>
+	{{ range .Frontends }}
+
+	<table class="tbl" width="100%">
+		<tr class="titre">
+			<th class="pxname" width="10%">
+				<a name="http-in"></a>
+				<a class=px href="#http-in">Frontend {{ .Cf.BindAddress }}</a>
+			</th>
+			<th class="empty" width="90%"></th>
+		</tr>
+	</table>
+	<table class="tbl" width="100%">
+		<tr class="titre">
+			<th rowspan=2 colspan=2></th>
+			<th colspan=3>Request rate</th>
+			<th colspan=5>Requests</th>
+			<th colspan=3>Bytes</th>
+			<th colspan=2>Denied</th>
+			<th colspan=3>Errors</th>
+		</tr>
+		<tr class="titre">
+			<th>Cur</th>
+			<th>Max</th>
+			<th>Limit</th>
+			<th>Cur</th>
+			<th>Max</th>
+			<th>Limit</th>
+			<th>Total</th>
+			<th>Last</th>
+			<th>In</th>
+			<th>Out</th>
+			<th>Req</th>
+			<th>Resp</th>
+			<th>Req</th>
+			<th>Conn</th>
+			<th>Resp</th>
+			<th>Retr</th>
+		</tr>
+
+		{{ range .Vhosts}}
+		{{ $cnt := .GetCounters }}
+		<tr class="active3">
+			<td colspan="2" class=al>
+				<a name="http-in/Frontend"></a>
+				{{ range .Cf.Domain }}<span class=lfsb>{{.}}</span>{{ end }}
+				{{if .Cf.Default}}[default]{{end}}
+			</td>
+			<td> <u><!-- session rate cur -->XXX
+					<div class=tips>
+						<table class=det>
+							<tr>
+								<th>Current connection rate:</th>
+								<td>2/s</td>
+							</tr>
+							<tr>
+								<th>Current session rate:</th>
+								<td>2/s</td>
+							</tr>
+							<tr>
+								<th>Current request rate:</th>
+								<td>3/s</td>
+							</tr>
+						</table>
+					</div></u> 
+			</td>
+			<td> <u>XXX
+					<div class=tips>
+						<table class=det>
+							<tr>
+								<th>Max connection rate:</th>
+								<td>125/s</td>
+							</tr>
+							<tr>
+								<th>Max session rate:</th>
+								<td>125/s</td>
+							</tr>
+							<tr>
+								<th>Max request rate:</th>
+								<td>125/s</td>
+							</tr>
+						</table>
+					</div></u> 
+			</td>
+			<td>-</td>
+			<td>{{ $cnt.CurActiveSessions }}</td>
+			<td>{{ $cnt.MaxActiveSessions }}</td>
+			<td>
+				XXXX
+			</td>
+			<td>
+				<u>
+					{{ $cnt.TotalSessions }}
+					<div class=tips>
+						<table class=det>
+							<tr>
+								<th>Cum. connections:</th>
+								<td>
+									52
+									<span class="rls">0</span>
+									064
+								</td>
+							</tr>
+							<tr>
+								<th>Cum. sessions:</th>
+								<td>
+									51
+									<span class="rls">9</span>
+									906
+								</td>
+							</tr>
+							<tr>
+								<th>Cum. HTTP requests:</th>
+								<td>
+									58
+									<span class="rls">3</span>
+									472
+								</td>
+							</tr>
+							<tr>
+								<th>- HTTP 1xx responses:</th>
+								<td>0</td>
+							</tr>
+							<tr>
+								<th>- HTTP 2xx responses:</th>
+								<td>
+									28
+									<span class="rls">1</span>
+									877
+								</td>
+							</tr>
+							<tr>
+								<th>&nbsp;&nbsp;Compressed 2xx:</th>
+								<td>0</td>
+								<td>(0%)</td>
+							</tr>
+							<tr>
+								<th>- HTTP 3xx responses:</th>
+								<td>
+									26
+									<span class="rls">8</span>
+									734
+								</td>
+							</tr>
+							<tr>
+								<th>- HTTP 4xx responses:</th>
+								<td>
+									3
+									<span class="rls">1</span>
+									836
+								</td>
+							</tr>
+							<tr>
+								<th>- HTTP 5xx responses:</th>
+								<td>402</td>
+							</tr>
+							<tr>
+								<th>- other responses:</th>
+								<td>622</td>
+							</tr>
+							<tr>
+								<th>Intercepted requests:</th>
+								<td>0</td>
+							</tr>
+						</table>
+					</div>
+				</u>
+			</td>
+			<td></td>
+			<td>
+				XXXX
+			</td>
+			<td>
+				XXXX
+				<div class=tips>compression: in=0 out=0 bypassed=0 savings=0%</div>
+			</td>
+			<td>XXX</td>
+			<td>XX</td>
+			<td>
+				XXX
+			</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+
+		{{ range .Routes}}
+		{{ $cnt := .GetCounters }}
+
+		<tr class="active4">
+			<td class="active3"></td>
+			<td class=al>
+				<a name="http-in/Frontend"></a>
+				<a class=lfsb href="#http-in/Frontend">{{.Cf.Path}}</a>
+			</td>
+			<td> <u><!-- session rate cur -->XXX
+					<div class=tips>
+						<table class=det>
+							<tr>
+								<th>Current connection rate:</th>
+								<td>2/s</td>
+							</tr>
+							<tr>
+								<th>Current session rate:</th>
+								<td>2/s</td>
+							</tr>
+							<tr>
+								<th>Current request rate:</th>
+								<td>3/s</td>
+							</tr>
+						</table>
+					</div></u> 
+			</td>
+			<td> <u>XXX
+					<div class=tips>
+						<table class=det>
+							<tr>
+								<th>Max connection rate:</th>
+								<td>125/s</td>
+							</tr>
+							<tr>
+								<th>Max session rate:</th>
+								<td>125/s</td>
+							</tr>
+							<tr>
+								<th>Max request rate:</th>
+								<td>125/s</td>
+							</tr>
+						</table>
+					</div></u> 
+			</td>
+			<td>-</td>
+			<td>{{ $cnt.CurActiveSessions }}</td>
+			<td>{{ $cnt.MaxActiveSessions }}</td>
+			<td>
+				XXXX
+			</td>
+			<td>
+				<u>
+					{{ $cnt.TotalSessions }}
+					<div class=tips>
+						<table class=det>
+							<tr>
+								<th>Cum. connections:</th>
+								<td>
+									52
+									<span class="rls">0</span>
+									064
+								</td>
+							</tr>
+							<tr>
+								<th>Cum. sessions:</th>
+								<td>
+									51
+									<span class="rls">9</span>
+									906
+								</td>
+							</tr>
+							<tr>
+								<th>Cum. HTTP requests:</th>
+								<td>
+									58
+									<span class="rls">3</span>
+									472
+								</td>
+							</tr>
+							<tr>
+								<th>- HTTP 1xx responses:</th>
+								<td>0</td>
+							</tr>
+							<tr>
+								<th>- HTTP 2xx responses:</th>
+								<td>
+									28
+									<span class="rls">1</span>
+									877
+								</td>
+							</tr>
+							<tr>
+								<th>&nbsp;&nbsp;Compressed 2xx:</th>
+								<td>0</td>
+								<td>(0%)</td>
+							</tr>
+							<tr>
+								<th>- HTTP 3xx responses:</th>
+								<td>
+									26
+									<span class="rls">8</span>
+									734
+								</td>
+							</tr>
+							<tr>
+								<th>- HTTP 4xx responses:</th>
+								<td>
+									3
+									<span class="rls">1</span>
+									836
+								</td>
+							</tr>
+							<tr>
+								<th>- HTTP 5xx responses:</th>
+								<td>402</td>
+							</tr>
+							<tr>
+								<th>- other responses:</th>
+								<td>622</td>
+							</tr>
+							<tr>
+								<th>Intercepted requests:</th>
+								<td>0</td>
+							</tr>
+						</table>
+					</div>
+				</u>
+			</td>
+			<td></td>
+			<td>
+				XXXX
+			</td>
+			<td>
+				XXXX
+				<div class=tips>compression: in=0 out=0 bypassed=0 savings=0%</div>
+			</td>
+			<td>XXX</td>
+			<td>X</td>
+			<td>
+				XXX
+			</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		{{ end }} <!-- range .Routes -->
+
+		{{ end }} <!-- range .Vhosts -->
+
+		{{ $cnt := .GetCounters }} <!-- counter for the frontend -->
+		<tr class="frontend">
+			<td class=ac colspan="2">
+				<a name="http-in/Frontend"></a>
+				<a class=lfsb href="#http-in/Frontend">Frontend total</a>
+			</td>
+			<td> <u><!-- session rate cur -->XXX
+					<div class=tips>
+						<table class=det>
+							<tr>
+								<th>Current connection rate:</th>
+								<td>2/s</td>
+							</tr>
+							<tr>
+								<th>Current session rate:</th>
+								<td>2/s</td>
+							</tr>
+							<tr>
+								<th>Current request rate:</th>
+								<td>3/s</td>
+							</tr>
+						</table>
+					</div></u> 
+			</td>
+			<td> <u>XXX
+					<div class=tips>
+						<table class=det>
+							<tr>
+								<th>Max connection rate:</th>
+								<td>125/s</td>
+							</tr>
+							<tr>
+								<th>Max session rate:</th>
+								<td>125/s</td>
+							</tr>
+							<tr>
+								<th>Max request rate:</th>
+								<td>125/s</td>
+							</tr>
+						</table>
+					</div></u> 
+			</td>
+			<td>-</td>
+			<td>{{ $cnt.CurActiveSessions }}</td>
+			<td>{{ $cnt.MaxActiveSessions }}</td>
+			<td>
+				XXXX
+			</td>
+			<td>
+				<u>
+					{{ $cnt.TotalSessions }}
+					<div class=tips>
+						<table class=det>
+							<tr>
+								<th>Cum. connections:</th>
+								<td>
+									52
+									<span class="rls">0</span>
+									064
+								</td>
+							</tr>
+							<tr>
+								<th>Cum. sessions:</th>
+								<td>
+									51
+									<span class="rls">9</span>
+									906
+								</td>
+							</tr>
+							<tr>
+								<th>Cum. HTTP requests:</th>
+								<td>
+									58
+									<span class="rls">3</span>
+									472
+								</td>
+							</tr>
+							<tr>
+								<th>- HTTP 1xx responses:</th>
+								<td>0</td>
+							</tr>
+							<tr>
+								<th>- HTTP 2xx responses:</th>
+								<td>
+									28
+									<span class="rls">1</span>
+									877
+								</td>
+							</tr>
+							<tr>
+								<th>&nbsp;&nbsp;Compressed 2xx:</th>
+								<td>0</td>
+								<td>(0%)</td>
+							</tr>
+							<tr>
+								<th>- HTTP 3xx responses:</th>
+								<td>
+									26
+									<span class="rls">8</span>
+									734
+								</td>
+							</tr>
+							<tr>
+								<th>- HTTP 4xx responses:</th>
+								<td>
+									3
+									<span class="rls">1</span>
+									836
+								</td>
+							</tr>
+							<tr>
+								<th>- HTTP 5xx responses:</th>
+								<td>402</td>
+							</tr>
+							<tr>
+								<th>- other responses:</th>
+								<td>622</td>
+							</tr>
+							<tr>
+								<th>Intercepted requests:</th>
+								<td>0</td>
+							</tr>
+						</table>
+					</div>
+				</u>
+			</td>
+			<td></td>
+			<td>
+				XXXX
+			</td>
+			<td>
+				XXXX
+				<div class=tips>compression: in=0 out=0 bypassed=0 savings=0%</div>
+			</td>
+			<td>XXX</td>
+			<td>7</td>
+			<td>
+				XXX
+			</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+	</table>
+	<br>
+	{{ end }} <!-- range .Frontend -->
+	{{range .Backends}}
+	<table class="tbl" width="100%">
+		<tr class="titre">
+			<th class="pxname" width="10%">
+				<a name="stats"></a>
+				<a class=px href="#stats">Backend {{ .Cf.Name }}</a>
+			</th>
+			<th class="empty" width="90%"></th>
+		</tr>
+	</table>
+	<table class="tbl" width="100%">
+		<tr class="titre">
+			<th rowspan=2></th>
+			<th colspan=3>Queue</th>
+			<th colspan=3>Session rate</th>
+			<th colspan=6>Sessions</th>
+			<th colspan=2>Bytes</th>
+			<th colspan=2>Denied</th>
+			<th colspan=3>Errors</th>
+			<th colspan=2>Warnings</th>
+			<th colspan=9>Server</th>
+		</tr>
+		<tr class="titre">
+			<th>Cur</th>
+			<th>Max</th>
+			<th>Limit</th>
+			<th>Cur</th>
+			<th>Max</th>
+			<th>Limit</th>
+			<th>Cur</th>
+			<th>Max</th>
+			<th>Limit</th>
+			<th>Total</th>
+			<th>Last</th>
+			<th>In</th>
+			<th>Out</th>
+			<th>Req</th>
+			<th>Resp</th>
+			<th>Req</th>
+			<th>Conn</th>
+			<th>Resp</th>
+			<th>Retr</th>
+			<th>Redis</th>
+			<th>Status</th>
+			<th>LastChk</th>
+			<th>Wght</th>
+			<th>Act</th>
+			<th>Bck</th>
+			<th>Chk</th>
+			<th>Dwn</th>
+			<th>Dwntme</th>
+			<th>Thrtle</th>
+		</tr>
+		{{ range .Servers}}
+		{{ $cnt := .GetCounters }}
+		<tr class="active4">
+			<td class=ac>
+				<a name="page2rss/h2"></a>
+				<a class=lfsb href="#page2rss/h2">{{ .Cf.Address }}</a>
+			</td>
+			<td>X</td>
+			<td>X</td>
+			<td>X</td>
+			<td>X</td>
+			<td>X</td>
+			<td>X</td>
+			<td>{{ $cnt.CurActiveSessions }}</td>
+			<td>{{ $cnt.MaxActiveSessions }}</td>
+			<td>X</td>
+			<td>
+				<u>
+					{{ $cnt.TotalSessions }}
+					<div class=tips>
+						<table class=det>
+							<tr>
+								<th>Cum. sessions:</th>
+								<td>
+									18
+									<span class="rls">0</span>
+									456
+								</td>
+							</tr>
+							<tr>
+								<th>Cum. HTTP responses:</th>
+								<td>
+									18
+									<span class="rls">0</span>
+									200
+								</td>
+							</tr>
+							<tr>
+								<th>- HTTP 1xx responses:</th>
+								<td>0</td>
+								<td>(0%)</td>
+							</tr>
+							<tr>
+								<th>- HTTP 2xx responses:</th>
+								<td>
+									8
+									<span class="rls">5</span>
+									642
+								</td>
+								<td>(47%)</td>
+							</tr>
+							<tr>
+								<th>- HTTP 3xx responses:</th>
+								<td>
+									8
+									<span class="rls">6</span>
+									653
+								</td>
+								<td>(48%)</td>
+							</tr>
+							<tr>
+								<th>- HTTP 4xx responses:</th>
+								<td>
+									<span class="rls">7</span>
+									877
+								</td>
+								<td>(4%)</td>
+							</tr>
+							<tr>
+								<th>- HTTP 5xx responses:</th>
+								<td>28</td>
+								<td>(0%)</td>
+							</tr>
+							<tr>
+								<th>- other responses:</th>
+								<td>0</td>
+								<td>(0%)</td>
+							</tr>
+							<tr>
+								<th colspan=3>Avg over last 1024 success. conn.</th>
+							</tr>
+							<tr>
+								<th>- Queue time:</th>
+								<td>0</td>
+								<td>ms</td>
+							</tr>
+							<tr>
+								<th>- Connect time:</th>
+								<td>0</td>
+								<td>ms</td>
+							</tr>
+							<tr>
+								<th>- Response time:</th>
+								<td>4</td>
+								<td>ms</td>
+							</tr>
+							<tr>
+								<th>- Total time:</th>
+								<td>
+									<span class="rls">1</span>
+									024
+								</td>
+								<td>ms</td>
+							</tr>
+						</table>
+					</div>
+				</u>
+			</td>
+			<td>9s</td>
+			<td>
+				XXX
+			</td>
+			<td>
+				XXX
+			</td>
+			<td></td>
+			<td>3</td>
+			<td></td>
+			<td>0</td>
+			<td>
+				<u>
+					9
+					<div class=tips>Connection resets during transfers: 561 client, 0 server</div>
+				</u>
+			</td>
+			<td>0</td>
+			<td>0</td>
+			<td class=ac>1d3h UP</td>
+			<td class=ac>
+				<u>
+					L7OK/200 in 0ms
+					<div class=tips>Layer7 check passed: Ok</div>
+				</u>
+			</td>
+			<td class=ac>10</td>
+			<td class=ac>Y</td>
+			<td class=ac>-</td>
+			<td>
+				<u>
+					8
+					<div class=tips>Failed Health Checks</div>
+				</u>
+			</td>
+			<td>3</td>
+			<td>16m51s</td>
+			<td class=ac>-</td>
+		</tr>
+		{{ end }}
+		<tr class="backend">
+			<td class=ac>
+				<a name="page2rss/Backend"></a>
+				<a class=lfsb href="#page2rss/Backend">Total for backend</a>
+			</td>
+			<td>0</td>
+			<td>0</td>
+			<td></td>
+			<td>0</td>
+			<td>125</td>
+			<td></td>
+			<td>0</td>
+			<td>18</td>
+			<td>200</td>
+			<td>
+				<u>
+					54
+					<span class="rls">1</span>
+					463
+					<div class=tips>
+						<table class=det>
+							<tr>
+								<th>Cum. sessions:</th>
+								<td>
+									54
+									<span class="rls">1</span>
+									463
+								</td>
+							</tr>
+							<tr>
+								<th>Cum. HTTP requests:</th>
+								<td>
+									54
+									<span class="rls">1</span>
+									463
+								</td>
+							</tr>
+							<tr>
+								<th>- HTTP 1xx responses:</th>
+								<td>0</td>
+							</tr>
+							<tr>
+								<th>- HTTP 2xx responses:</th>
+								<td>
+									25
+									<span class="rls">6</span>
+									270
+								</td>
+							</tr>
+							<tr>
+								<th>&nbsp;&nbsp;Compressed 2xx:</th>
+								<td>0</td>
+								<td>(0%)</td>
+							</tr>
+							<tr>
+								<th>- HTTP 3xx responses:</th>
+								<td>
+									26
+									<span class="rls">0</span>
+									601
+								</td>
+							</tr>
+							<tr>
+								<th>- HTTP 4xx responses:</th>
+								<td>
+									2
+									<span class="rls">3</span>
+									568
+								</td>
+							</tr>
+							<tr>
+								<th>- HTTP 5xx responses:</th>
+								<td>402</td>
+							</tr>
+							<tr>
+								<th>- other responses:</th>
+								<td>622</td>
+							</tr>
+							<tr>
+								<th>Intercepted requests:</th>
+								<td>0</td>
+							</tr>
+							<tr>
+								<th colspan=3>Avg over last 1024 success. conn.</th>
+							</tr>
+							<tr>
+								<th>- Queue time:</th>
+								<td>0</td>
+								<td>ms</td>
+							</tr>
+							<tr>
+								<th>- Connect time:</th>
+								<td>0</td>
+								<td>ms</td>
+							</tr>
+							<tr>
+								<th>- Response time:</th>
+								<td>5</td>
+								<td>ms</td>
+							</tr>
+							<tr>
+								<th>- Total time:</th>
+								<td>888</td>
+								<td>ms</td>
+							</tr>
+						</table>
+					</div>
+				</u>
+			</td>
+			<td>XXX</td>
+			<td>XXX</td>
+			<td>XXX</td>
+			<td>
+				XXX
+				<div class=tips>compression: in=0 out=0 bypassed=0 savings=0%</div>
+			</td>
+			<td>17</td>
+			<td>7</td>
+			<td></td>
+			<td>222</td>
+			<td>
+				<u>
+					32
+					<div class=tips>Connection resets during transfers: 1651 client, 0 server</div>
+				</u>
+			</td>
+			<td>0</td>
+			<td>0</td>
+			<td class=ac>6d5h UP</td>
+			<td class=ac>&nbsp;</td>
+			<td class=ac>30</td>
+			<td class=ac>3</td>
+			<td class=ac>0</td>
+			<td class=ac>&nbsp;</td>
+			<td>1</td>
+			<td>11m48s</td>
+			<td></td>
+		</tr>
+	</table>
+	<br>{{end}}</body>
+</html>

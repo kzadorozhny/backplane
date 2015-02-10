@@ -6,6 +6,8 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+var staticbackends = map[string]bool{"internalstats": true}
+
 //go:generate protoc --go_out=. config.proto
 //TODO: fail on duplicates
 func Validate(cf *Config) error {
@@ -25,7 +27,7 @@ func Validate(cf *Config) error {
 				if len(b.BackendName) == 0 {
 					return fmt.Errorf("binding %s has no backends configured", b.Path)
 				}
-				if _, ok := backends[b.BackendName]; !ok {
+				if backends[b.BackendName] == nil && !staticbackends[b.BackendName] {
 					return fmt.Errorf("binding %s: unknown backend %s", b.Path, b.BackendName)
 				}
 			}
