@@ -1,6 +1,7 @@
 package backplane
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/http"
@@ -27,12 +28,14 @@ type Route struct {
 
 type Frontend struct {
 	http.Handler
-	Cf  *config.HttpFrontend
-	srv *http.Server
-	sln *StoppableListener
+	Cf          *config.HttpFrontend
+	srv         *http.Server
+	sln         *StoppableListener
+	tlsListener net.Listener
 	//for stats display only
 	stats.Counting
-	Vhosts []*Vhost
+	Vhosts  []*Vhost
+	tlsconf *tls.Config
 }
 
 func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, error) {
@@ -71,20 +74,55 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 	f.srv = &http.Server{Handler: f}
 	//TODO: configure all backends and routes before serving
 	//TODO: handle error (raised if l.Accept errors)
+
+	if f.Cf.SslKey != "" {
+		cert, err := tls.X509KeyPair([]byte(f.Cf.SslCert), []byte(f.Cf.SslKey))
+		if err != nil {
+			return nil, err
+		}
+		f.tlsconf = &tls.Config{
+			NextProtos:   []string{"http/1.1"},
+			Certificates: []tls.Certificate{cert},
+		}
+		f.tlsconf.BuildNameToCertificate()
+	}
 	return f, nil
 }
 
 func (f *Frontend) Listen() error {
-	glog.V(2).Infof("frontend listening on %s", f.Cf.BindAddress)
-	ln, err := net.Listen("tcp", f.Cf.BindAddress)
-	if err != nil {
-		return err
+	if f.Cf.BindAddress != "" {
+		glog.V(2).Infof("frontend listening on http://%s/", f.Cf.BindAddress)
+		ln, err := net.Listen("tcp", f.Cf.BindAddress)
+		if err != nil {
+			return err
+		}
+		f.sln = NewStoppableListener(ln.(*net.TCPListener))
 	}
-	f.sln = NewStoppableListener(ln.(*net.TCPListener))
+
+	if f.tlsconf != nil {
+		addr := f.Cf.BindSsl
+		if addr == "" {
+			addr = ":https"
+		}
+		glog.V(2).Infof("frontend listening on SSL https://%s/", addr)
+
+		ln, err := net.Listen("tcp", addr)
+		if err != nil {
+			return err
+		}
+
+		//TODO: put it in the struct so it could be actually stopped
+		sln := NewStoppableListener(ln.(*net.TCPListener))
+		f.tlsListener = tls.NewListener(sln, f.tlsconf)
+
+	}
 	return nil
 }
 
 func (f *Frontend) Serve() {
+	if f.tlsListener != nil {
+		go f.srv.Serve(f.tlsListener)
+	}
 	f.srv.Serve(f.sln)
 }
 

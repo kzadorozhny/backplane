@@ -17,6 +17,9 @@ message http_frontend {
 	string name = 1; 			//required
 	string bind_address = 2; 	// required
 	repeated vhost host = 3;
+	string bind_ssl = 4;
+	string ssl_cert = 5; // SSL/TLS certificate as string.
+	string ssl_key = 6; // SSL/TLS private key.
 }
 
 message server {

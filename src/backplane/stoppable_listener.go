@@ -14,12 +14,12 @@ import (
 
 type StoppableListener struct {
 	*net.TCPListener
-	AcceptedCnt int64
 	stop        chan int //Channel used only to indicate listener should shutdown. listener will close it after the shutdown
+	AcceptedCnt int64
 }
 
 func NewStoppableListener(l *net.TCPListener) *StoppableListener {
-	return &StoppableListener{l, make(chan int)}
+	return &StoppableListener{l, make(chan int), 0}
 }
 
 var StoppedError = errors.New("Stopped")

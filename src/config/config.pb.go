@@ -36,6 +36,9 @@ type HttpFrontend struct {
 	Name        string               `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	BindAddress string               `protobuf:"bytes,2,opt,name=bind_address" json:"bind_address,omitempty"`
 	Host        []*HttpFrontendVhost `protobuf:"bytes,3,rep,name=host" json:"host,omitempty"`
+	BindSsl     string               `protobuf:"bytes,4,opt,name=bind_ssl" json:"bind_ssl,omitempty"`
+	SslCert     string               `protobuf:"bytes,5,opt,name=ssl_cert" json:"ssl_cert,omitempty"`
+	SslKey      string               `protobuf:"bytes,6,opt,name=ssl_key" json:"ssl_key,omitempty"`
 }
 
 func (m *HttpFrontend) Reset()         { *m = HttpFrontend{} }
