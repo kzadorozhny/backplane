@@ -16,13 +16,28 @@ type StoppableListener struct {
 	*net.TCPListener
 	stop        chan int //Channel used only to indicate listener should shutdown. listener will close it after the shutdown
 	AcceptedCnt int64
+	ActiveCnt   int64
 }
 
 func NewStoppableListener(l *net.TCPListener) *StoppableListener {
-	return &StoppableListener{l, make(chan int), 0}
+	return &StoppableListener{l, make(chan int), 0, 0}
 }
 
 var StoppedError = errors.New("Stopped")
+
+type conn struct {
+	net.Conn
+	closed bool
+	parent *StoppableListener
+}
+
+func (c *conn) Close() error {
+	if !c.closed {
+		c.closed = true
+		atomic.AddInt64(&c.parent.ActiveCnt, -1)
+	}
+	return c.Conn.Close()
+}
 
 func (sl *StoppableListener) Accept() (net.Conn, error) {
 	for {
@@ -49,11 +64,12 @@ func (sl *StoppableListener) Accept() (net.Conn, error) {
 				continue
 			}
 		}
+		atomic.AddInt64(&sl.ActiveCnt, 1)
 		atomic.AddInt64(&sl.AcceptedCnt, 1)
 		tc.SetKeepAlive(true)
 		tc.SetKeepAlivePeriod(3 * time.Minute)
 
-		return tc, err
+		return &conn{Conn: tc, parent: sl}, err
 	}
 }
 

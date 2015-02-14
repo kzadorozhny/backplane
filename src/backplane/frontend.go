@@ -30,7 +30,7 @@ type Frontend struct {
 	http.Handler
 	Cf          *config.HttpFrontend
 	srv         *http.Server
-	sln         *StoppableListener
+	Sln, TlsSln *StoppableListener
 	tlsListener net.Listener
 	//for stats display only
 	stats.Counting
@@ -83,6 +83,7 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 		f.tlsconf = &tls.Config{
 			NextProtos:   []string{"http/1.1"},
 			Certificates: []tls.Certificate{cert},
+			MinVersion:   tls.VersionTLS10,
 		}
 		f.tlsconf.BuildNameToCertificate()
 	}
@@ -96,7 +97,7 @@ func (f *Frontend) Listen() error {
 		if err != nil {
 			return err
 		}
-		f.sln = NewStoppableListener(ln.(*net.TCPListener))
+		f.Sln = NewStoppableListener(ln.(*net.TCPListener))
 	}
 
 	if f.tlsconf != nil {
@@ -113,6 +114,7 @@ func (f *Frontend) Listen() error {
 
 		//TODO: put it in the struct so it could be actually stopped
 		sln := NewStoppableListener(ln.(*net.TCPListener))
+		f.TlsSln = sln
 		f.tlsListener = tls.NewListener(sln, f.tlsconf)
 
 	}
@@ -123,11 +125,11 @@ func (f *Frontend) Serve() {
 	if f.tlsListener != nil {
 		go f.srv.Serve(f.tlsListener)
 	}
-	f.srv.Serve(f.sln)
+	f.srv.Serve(f.Sln)
 }
 
 func (f *Frontend) Stop() {
-	f.sln.Stop(false)
+	f.Sln.Stop(false)
 }
 
 // We need an object that implements the http.Handler interface.

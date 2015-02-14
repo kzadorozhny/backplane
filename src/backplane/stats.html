@@ -187,6 +187,29 @@
 			<th class="empty" width="90%"></th>
 		</tr>
 	</table>
+
+	<table class="tbl">
+		<tr class="titre">
+			<th>address</th>
+			<th>Active Sessions</th>
+			<th>Totoal Sessions</th>
+		</tr>
+		{{ if .Cf.BindAddress }}
+		<tr class="active4">
+			<td><a href="http://{{ .Cf.BindAddress }}/">{{.Cf.BindAddress}}</a></td>
+			<td>{{ .Sln.ActiveCnt }}</td>
+			<td>{{ .Sln.AcceptedCnt }}</td>
+		</tr>
+		{{ end }}
+		{{ if .Cf.BindSsl }}
+		<tr class="active4">
+			<td><a href="https://{{ .Cf.BindSsl }}/">{{.Cf.BindSsl}}</a></td>
+			<td>{{ .TlsSln.ActiveCnt }}</td>
+			<td>{{ .TlsSln.AcceptedCnt }}</td>
+		</tr>
+		{{ end }}
+	</table>
+
 	<table class="tbl" width="100%">
 		<tr class="titre">
 			<th rowspan=2 colspan=2></th>
@@ -667,6 +690,7 @@
 			<th class="empty" width="90%"></th>
 		</tr>
 	</table>
+
 	<table class="tbl" width="100%">
 		<tr class="titre">
 			<th rowspan=2></th>
