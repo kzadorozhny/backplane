@@ -13,17 +13,21 @@ import (
 	"github.com/golang/glog"
 )
 
+const FIXME_RATE_LIMIT = 100000
+
 type HandlersMap func(name string) http.Handler
 
 type Vhost struct {
 	Cf *config.HttpFrontendVhost
 	stats.Counting
-	Routes []*Route
+	RateLimiter *stats.EMARateLimiter
+	Routes      []*Route
 }
 
 type Route struct {
 	Cf *config.HttpHandler
 	stats.Counting
+	RateLimiter *stats.EMARateLimiter
 }
 
 type Frontend struct {
@@ -34,14 +38,15 @@ type Frontend struct {
 	tlsListener net.Listener
 	//for stats display only
 	stats.Counting
-	Vhosts  []*Vhost
-	tlsconf *tls.Config
+	RateLimiter *stats.EMARateLimiter
+	Vhosts      []*Vhost
+	tlsconf     *tls.Config
 }
 
 func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, error) {
 	hs := &HostSwitch{handlers: make(map[string]http.Handler)}
-	chs := &stats.CountersCollectingHandler{Handler: hs}
-	f := &Frontend{Cf: cf, Handler: chs, Counting: chs}
+	chs := &stats.CountersCollectingHandler{Handler: hs, RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT)}
+	f := &Frontend{Cf: cf, Handler: chs, Counting: chs, RateLimiter: chs.RateLimiter}
 
 	if cf.BindAddress == "" {
 		return nil, fmt.Errorf("frontend %s: Bind address is empty", cf.Name)
@@ -50,8 +55,9 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 		vhost := &Vhost{Cf: vh}
 		f.Vhosts = append(f.Vhosts, vhost)
 		mux := http.NewServeMux()
-		cmux := &stats.CountersCollectingHandler{Handler: mux}
+		cmux := &stats.CountersCollectingHandler{Handler: mux, RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT)}
 		vhost.Counting = cmux
+		vhost.RateLimiter = cmux.RateLimiter
 		if vh.Default {
 			if hs.defaultHandler != nil {
 				return nil, fmt.Errorf("frontend %s host %d: default is already defined", cf.Name, i+1)
@@ -66,9 +72,10 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 			if h == nil {
 				return nil, fmt.Errorf("Unknown backend %s", hc.BackendName)
 			}
-			ch := &stats.CountersCollectingHandler{Handler: h}
+			ch := &stats.CountersCollectingHandler{Handler: h, RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT)}
 			mux.Handle(hc.Path, ch)
-			vhost.Routes = append(vhost.Routes, &Route{Cf: hc, Counting: ch})
+			r := &Route{Cf: hc, Counting: ch, RateLimiter: ch.RateLimiter}
+			vhost.Routes = append(vhost.Routes, r)
 		}
 	}
 	f.srv = &http.Server{Handler: f}

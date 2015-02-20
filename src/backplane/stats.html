@@ -191,21 +191,37 @@
 	<table class="tbl">
 		<tr class="titre">
 			<th>address</th>
+			<th>Sessions Rate</th>
+			<th>Max Sessions Rate</th>
+			<th>Sessions Rate Limit</th>
+			<th>Sessions RL Dropped</th>
 			<th>Active Sessions</th>
 			<th>Totoal Sessions</th>
 		</tr>
 		{{ if .Cf.BindAddress }}
 		<tr class="active4">
 			<td><a href="http://{{ .Cf.BindAddress }}/">{{.Cf.BindAddress}}</a></td>
-			<td>{{ .Sln.ActiveCnt }}</td>
-			<td>{{ .Sln.AcceptedCnt }}</td>
+			{{ with .Sln }}
+			<td>{{ .RateLimiter.CurrentQPS }}</td>
+			<td>{{ .RateLimiter.MaxQPS }}</td>
+			<td>{{ .RateLimiter.TargetQPS }}</td>
+			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
+			<td>{{ .ActiveCnt }}</td>
+			<td>{{ .AcceptedCnt }}</td>
+			{{ end }}
 		</tr>
 		{{ end }}
 		{{ if .Cf.BindSsl }}
 		<tr class="active4">
 			<td><a href="https://{{ .Cf.BindSsl }}/">{{.Cf.BindSsl}}</a></td>
-			<td>{{ .TlsSln.ActiveCnt }}</td>
-			<td>{{ .TlsSln.AcceptedCnt }}</td>
+			{{ with .TlsSln }}
+			<td>{{ .RateLimiter.CurrentQPS }}</td>
+			<td>{{ .RateLimiter.MaxQPS }}</td>
+			<td>{{ .RateLimiter.TargetQPS }}</td>
+			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
+			<td>{{ .ActiveCnt }}</td>
+			<td>{{ .AcceptedCnt }}</td>
+			{{ end }}
 		</tr>
 		{{ end }}
 	</table>
@@ -213,7 +229,7 @@
 	<table class="tbl" width="100%">
 		<tr class="titre">
 			<th rowspan=2 colspan=2></th>
-			<th colspan=3>Request rate</th>
+			<th colspan=4>Request rate</th>
 			<th colspan=5>Requests</th>
 			<th colspan=3>Bytes</th>
 			<th colspan=2>Denied</th>
@@ -223,6 +239,7 @@
 			<th>Cur</th>
 			<th>Max</th>
 			<th>Limit</th>
+			<th>Dropped</th>
 			<th>Cur</th>
 			<th>Max</th>
 			<th>Limit</th>
@@ -246,43 +263,10 @@
 				{{ range .Cf.Domain }}<span class=lfsb>{{.}}</span>{{ end }}
 				{{if .Cf.Default}}[default]{{end}}
 			</td>
-			<td> <u><!-- session rate cur -->XXX
-					<div class=tips>
-						<table class=det>
-							<tr>
-								<th>Current connection rate:</th>
-								<td>2/s</td>
-							</tr>
-							<tr>
-								<th>Current session rate:</th>
-								<td>2/s</td>
-							</tr>
-							<tr>
-								<th>Current request rate:</th>
-								<td>3/s</td>
-							</tr>
-						</table>
-					</div></u> 
-			</td>
-			<td> <u>XXX
-					<div class=tips>
-						<table class=det>
-							<tr>
-								<th>Max connection rate:</th>
-								<td>125/s</td>
-							</tr>
-							<tr>
-								<th>Max session rate:</th>
-								<td>125/s</td>
-							</tr>
-							<tr>
-								<th>Max request rate:</th>
-								<td>125/s</td>
-							</tr>
-						</table>
-					</div></u> 
-			</td>
-			<td>-</td>
+			<td>{{ .RateLimiter.CurrentQPS }}</td>
+			<td>{{ .RateLimiter.MaxQPS }}</td>
+			<td>{{ .RateLimiter.TargetQPS }}</td>
+			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
 			<td>{{ $cnt.CurActiveSessions }}</td>
 			<td>{{ $cnt.MaxActiveSessions }}</td>
 			<td>
@@ -393,43 +377,10 @@
 				<a name="http-in/Frontend"></a>
 				<a class=lfsb href="#http-in/Frontend">{{.Cf.Path}}</a>
 			</td>
-			<td> <u><!-- session rate cur -->XXX
-					<div class=tips>
-						<table class=det>
-							<tr>
-								<th>Current connection rate:</th>
-								<td>2/s</td>
-							</tr>
-							<tr>
-								<th>Current session rate:</th>
-								<td>2/s</td>
-							</tr>
-							<tr>
-								<th>Current request rate:</th>
-								<td>3/s</td>
-							</tr>
-						</table>
-					</div></u> 
-			</td>
-			<td> <u>XXX
-					<div class=tips>
-						<table class=det>
-							<tr>
-								<th>Max connection rate:</th>
-								<td>125/s</td>
-							</tr>
-							<tr>
-								<th>Max session rate:</th>
-								<td>125/s</td>
-							</tr>
-							<tr>
-								<th>Max request rate:</th>
-								<td>125/s</td>
-							</tr>
-						</table>
-					</div></u> 
-			</td>
-			<td>-</td>
+			<td>{{ .RateLimiter.CurrentQPS }}</td>
+			<td>{{ .RateLimiter.MaxQPS }}</td>
+			<td>{{ .RateLimiter.TargetQPS }}</td>
+			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
 			<td>{{ $cnt.CurActiveSessions }}</td>
 			<td>{{ $cnt.MaxActiveSessions }}</td>
 			<td>
@@ -540,43 +491,10 @@
 				<a name="http-in/Frontend"></a>
 				<a class=lfsb href="#http-in/Frontend">Frontend total</a>
 			</td>
-			<td> <u><!-- session rate cur -->XXX
-					<div class=tips>
-						<table class=det>
-							<tr>
-								<th>Current connection rate:</th>
-								<td>2/s</td>
-							</tr>
-							<tr>
-								<th>Current session rate:</th>
-								<td>2/s</td>
-							</tr>
-							<tr>
-								<th>Current request rate:</th>
-								<td>3/s</td>
-							</tr>
-						</table>
-					</div></u> 
-			</td>
-			<td> <u>XXX
-					<div class=tips>
-						<table class=det>
-							<tr>
-								<th>Max connection rate:</th>
-								<td>125/s</td>
-							</tr>
-							<tr>
-								<th>Max session rate:</th>
-								<td>125/s</td>
-							</tr>
-							<tr>
-								<th>Max request rate:</th>
-								<td>125/s</td>
-							</tr>
-						</table>
-					</div></u> 
-			</td>
-			<td>-</td>
+			<td>{{ .RateLimiter.CurrentQPS }}</td>
+			<td>{{ .RateLimiter.MaxQPS }}</td>
+			<td>{{ .RateLimiter.TargetQPS }}</td>
+			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
 			<td>{{ $cnt.CurActiveSessions }}</td>
 			<td>{{ $cnt.MaxActiveSessions }}</td>
 			<td>

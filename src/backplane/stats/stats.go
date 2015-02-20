@@ -52,8 +52,9 @@ func (s *Counters) out() {
 }
 
 type CountersCollectingHandler struct {
-	Handler http.Handler
-	stats   Counters
+	Handler     http.Handler
+	RateLimiter *EMARateLimiter
+	stats       Counters
 }
 
 func (s *CountersCollectingHandler) GetCounters() Counters {
@@ -62,6 +63,12 @@ func (s *CountersCollectingHandler) GetCounters() Counters {
 
 func (s *CountersCollectingHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	glog.V(3).Infof("handler %s in", req.RequestURI)
+	if s.RateLimiter != nil {
+		if !s.RateLimiter.Accepted() {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+	}
 	s.stats.in()
 	s.Handler.ServeHTTP(w, req)
 	s.stats.out()

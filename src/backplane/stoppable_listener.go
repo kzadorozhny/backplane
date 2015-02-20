@@ -5,6 +5,10 @@ import (
 	"net"
 	"sync/atomic"
 	"time"
+
+	"github.com/golang/glog"
+
+	"github.com/apesternikov/backplane/src/backplane/stats"
 )
 
 // tcpKeepAliveListener sets TCP keep-alive timeouts on accepted
@@ -17,10 +21,12 @@ type StoppableListener struct {
 	stop        chan int //Channel used only to indicate listener should shutdown. listener will close it after the shutdown
 	AcceptedCnt int64
 	ActiveCnt   int64
+	RateLimiter *stats.EMARateLimiter
 }
 
 func NewStoppableListener(l *net.TCPListener) *StoppableListener {
-	return &StoppableListener{l, make(chan int), 0, 0}
+	//TODO: rate limit in config
+	return &StoppableListener{l, make(chan int), 0, 0, stats.NewEMARateLimiter(100000)}
 }
 
 var StoppedError = errors.New("Stopped")
@@ -63,6 +69,11 @@ func (sl *StoppableListener) Accept() (net.Conn, error) {
 			if ok && netErr.Timeout() && netErr.Temporary() {
 				continue
 			}
+		}
+		if !sl.RateLimiter.Accepted() {
+			glog.Error("Acceptor QPS is too high, dropping connection")
+			tc.Close()
+			continue
 		}
 		atomic.AddInt64(&sl.ActiveCnt, 1)
 		atomic.AddInt64(&sl.AcceptedCnt, 1)
