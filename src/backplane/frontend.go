@@ -155,7 +155,12 @@ type HostSwitch struct {
 // Implement the ServerHTTP method on our new type
 func (hs *HostSwitch) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	glog.V(3).Infof("HostSwitch serving request %+v", r)
-	host := r.Host
+	var host string
+	if r.TLS != nil {
+		host = r.TLS.ServerName
+	} else {
+		host = r.Host
+	}
 	sepidx := strings.Index(host, ":")
 	if sepidx > 0 {
 		host = host[0:sepidx]

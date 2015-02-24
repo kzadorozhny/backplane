@@ -85,9 +85,6 @@ func (e *EMARateLimiter) TotalRejectedCount() int64 {
 	return atomic.LoadInt64(&e.requestThrottledCount)
 }
 
-// func (e *EMARateLimiter) CurrentQPS() int64 {
-// 	return iNanosInSeconds / atomic.LoadInt64(&e.avgWaitingNs)
-// }
-func (e *EMARateLimiter) CurrentQPS() float64 {
-	return nanosInSeconds / float64(atomic.LoadInt64(&e.avgWaitingNs))
+func (e *EMARateLimiter) CurrentQPS() int64 {
+	return iNanosInSeconds / atomic.LoadInt64(&e.avgWaitingNs)
 }
