@@ -4,7 +4,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"sync/atomic"
 	"time"
 
@@ -14,14 +13,18 @@ import (
 )
 
 // transport used by backends. test could set a mock implementation
-var transportForBackend func(addr string) http.RoundTripper = func(addr string) http.RoundTripper {
-	proxyurl := &url.URL{Scheme: "http", Host: addr}
+var transportForBackend func(backendaddr string) http.RoundTripper = func(backendaddr string) http.RoundTripper {
+	// proxyurl := &url.URL{Scheme: "http", Host: addr}
+	dialer := &net.Dialer{
+		Timeout:   3 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
 	return &http.Transport{
-		Proxy: http.ProxyURL(proxyurl),
-		Dial: (&net.Dialer{
-			Timeout:   3 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).Dial,
+		// Proxy: http.ProxyURL(proxyurl),
+		Dial: func(network, addr string) (net.Conn, error) {
+			//ignore address, always connect to the configured backend host
+			return dialer.Dial("tcp", backendaddr)
+		},
 		TLSHandshakeTimeout:   10 * time.Second, //we are not using TLS here, but keep it to avoid surprises later
 		ResponseHeaderTimeout: 30 * time.Second, //backend server timeout. TODO: make configurable
 	}
@@ -31,7 +34,9 @@ type Backend struct {
 	Cf       *config.HttpBackend
 	proxy    http.Handler
 	balancer *Balancer
-	Servers  []*Server
+	stats.Counting
+	RateLimiter *stats.EMARateLimiter
+	Servers     []*Server
 }
 
 func (b *Backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +53,15 @@ func NewBackend(cf *config.HttpBackend) (*Backend, error) {
 		},
 		Transport: balancer,
 	}
-	b := &Backend{Cf: cf, proxy: proxy, balancer: balancer, Servers: servers}
+	ch := &stats.CountersCollectingHandler{Handler: proxy, RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT)}
+	b := &Backend{
+		Cf:          cf,
+		proxy:       ch,
+		balancer:    balancer,
+		Counting:    ch,
+		RateLimiter: ch.RateLimiter,
+		Servers:     servers,
+	}
 	return b, nil
 }
 
@@ -66,9 +79,12 @@ type Balancer struct {
 func (b *Balancer) RoundTrip(r *http.Request) (*http.Response, error) {
 	idx := atomic.AddInt64(&b.idx, 1)
 	glog.V(3).Infof("Balancer serving %v using %d", r.URL, idx%int64(len(b.handlers)))
+	glog.V(3).Infof("Request %v", r)
 	h := b.handlers[idx%int64(len(b.handlers))]
 	//TODO: handle error and redirect to another server
-	return h.RoundTrip(r)
+	resp, err := h.RoundTrip(r)
+	glog.V(3).Infof("Response %v", resp)
+	return resp, err
 }
 
 func NewBalancer(cf *config.HttpBackend) (b *Balancer, servers []*Server) {
@@ -88,15 +104,17 @@ type Server struct {
 	//TODO: consider optimizing other places by preconverting interfaces?
 	http.RoundTripper
 	stats.Counting
+	RateLimiter *stats.EMARateLimiter
 }
 
 func NewServer(cf *config.Server) *Server {
 	t := transportForBackend(cf.Address)
-	ct := &stats.CountersCollectingRoundTripper{RoundTripper: t}
+	ct := &stats.CountersCollectingRoundTripper{RoundTripper: t, RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT)}
 	//TODO: insert limiters here
 	return &Server{
 		Cf:           cf,
 		RoundTripper: ct,
 		Counting:     ct,
+		RateLimiter:  ct.RateLimiter,
 	}
 }

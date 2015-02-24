@@ -132,7 +132,9 @@ func (f *Frontend) Serve() {
 	if f.tlsListener != nil {
 		go f.srv.Serve(f.tlsListener)
 	}
-	f.srv.Serve(f.Sln)
+	if f.Sln != nil {
+		f.srv.Serve(f.Sln)
+	}
 }
 
 func (f *Frontend) Stop() {
@@ -148,10 +150,17 @@ type HostSwitch struct {
 	defaultHandler http.Handler
 }
 
+//TODO: log and count host not found (and not default)
+
 // Implement the ServerHTTP method on our new type
 func (hs *HostSwitch) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	glog.V(3).Infof("HostSwitch serving request %+v", r)
-	handler := hs.handlers[r.Host]
+	host := r.Host
+	sepidx := strings.Index(host, ":")
+	if sepidx > 0 {
+		host = host[0:sepidx]
+	}
+	handler := hs.handlers[host]
 	switch {
 	case handler != nil:
 		handler.ServeHTTP(w, r)

@@ -1,10 +1,9 @@
 package stats
 
 import (
+	"errors"
 	"net/http"
 	"sync/atomic"
-
-	"github.com/golang/glog"
 )
 
 /*
@@ -62,7 +61,7 @@ func (s *CountersCollectingHandler) GetCounters() Counters {
 }
 
 func (s *CountersCollectingHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	glog.V(3).Infof("handler %s in", req.RequestURI)
+	// glog.V(3).Infof("handler %s in", req.RequestURI)
 	if s.RateLimiter != nil {
 		if !s.RateLimiter.Accepted() {
 			w.WriteHeader(http.StatusServiceUnavailable)
@@ -72,19 +71,27 @@ func (s *CountersCollectingHandler) ServeHTTP(w http.ResponseWriter, req *http.R
 	s.stats.in()
 	s.Handler.ServeHTTP(w, req)
 	s.stats.out()
-	glog.V(3).Infof("handler %s out", req.RequestURI)
+	// glog.V(3).Infof("handler %s out", req.RequestURI)
 }
 
 type CountersCollectingRoundTripper struct {
 	http.RoundTripper
-	stats Counters
+	RateLimiter *EMARateLimiter
+	stats       Counters
 }
 
 func (s *CountersCollectingRoundTripper) GetCounters() Counters {
 	return s.stats.atomicCopy()
 }
 
+var RateLimited = errors.New("Rate Limited")
+
 func (s *CountersCollectingRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	if s.RateLimiter != nil {
+		if !s.RateLimiter.Accepted() {
+			return nil, RateLimited
+		}
+	}
 	s.stats.in()
 	resp, err := s.RoundTripper.RoundTrip(r)
 	s.stats.out()

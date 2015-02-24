@@ -39,7 +39,11 @@ func (bp *Backplane) Configure(cf *config.Config) error {
 	}
 
 	for _, f := range frontends {
-		f.Listen()
+		err := f.Listen()
+		if err != nil {
+			glog.Errorf("Unable to listen: %s", err)
+		}
+		//TODO: handle listen errors (no permission on port 80 && !root)
 		go f.Serve()
 	}
 	bp.Backends = Backends

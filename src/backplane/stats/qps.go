@@ -3,8 +3,6 @@ package stats
 import (
 	"sync/atomic"
 	"time"
-
-	"github.com/golang/glog"
 )
 
 const WQ = 0.05
@@ -47,7 +45,7 @@ func (e *EMARateLimiter) Accepted() bool {
 	for {
 		avgWaitingNs := atomic.LoadInt64(&e.avgWaitingNs)
 		newavgWaitingNs := int64((1.-WQ)*float64(avgWaitingNs) + WQ*float64(instWaiting))
-		glog.V(3).Infof("avgWaitingNs %d newavgWaitingNs %d", avgWaitingNs, newavgWaitingNs)
+		// glog.V(3).Infof("avgWaitingNs %d newavgWaitingNs %d", avgWaitingNs, newavgWaitingNs)
 		if newavgWaitingNs < e.targetWaitingNs {
 			atomic.AddInt64(&e.requestThrottledCount, 1)
 			return false
@@ -87,6 +85,9 @@ func (e *EMARateLimiter) TotalRejectedCount() int64 {
 	return atomic.LoadInt64(&e.requestThrottledCount)
 }
 
-func (e *EMARateLimiter) CurrentQPS() int64 {
-	return iNanosInSeconds / atomic.LoadInt64(&e.avgWaitingNs)
+// func (e *EMARateLimiter) CurrentQPS() int64 {
+// 	return iNanosInSeconds / atomic.LoadInt64(&e.avgWaitingNs)
+// }
+func (e *EMARateLimiter) CurrentQPS() float64 {
+	return nanosInSeconds / float64(atomic.LoadInt64(&e.avgWaitingNs))
 }
