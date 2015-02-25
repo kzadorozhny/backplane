@@ -616,7 +616,7 @@
 		</tr>
 		{{ range .Servers}}
 		{{ $cnt := .GetCounters }}
-		<tr class="active4">
+		<tr class="{{ if .HealthChecker.IsHealthy }}active4{{ else }}active0{{ end }}">
 			<td class=ac>
 				<a name="page2rss/h2"></a>
 				<a class=lfsb href="#page2rss/h2">{{ .Cf.Address }}</a>
@@ -741,10 +741,10 @@
 			</td>
 			<td>0</td>
 			<td>0</td>
-			<td class=ac>1d3h UP</td>
+			<td class=ac>{{ .HealthChecker.LastStatusChange | age }} {{ if .HealthChecker.IsHealthy }}UP{{ else }}DOWN{{ end }}</td>
 			<td class=ac>
 				<u>
-					L7OK/200 in 0ms
+					{{ .HealthChecker.HealthStatus }}
 					<div class=tips>Layer7 check passed: Ok</div>
 				</u>
 			</td>

@@ -2,6 +2,7 @@ package stats
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"sync/atomic"
 )
@@ -96,4 +97,15 @@ func (s *CountersCollectingRoundTripper) RoundTrip(r *http.Request) (*http.Respo
 	resp, err := s.RoundTripper.RoundTrip(r)
 	s.stats.out()
 	return resp, err
+}
+
+func (s *CountersCollectingRoundTripper) CancelRequest(req *http.Request) {
+	type canceler interface {
+		CancelRequest(*http.Request)
+	}
+	tr, ok := s.RoundTripper.(canceler)
+	if !ok {
+		panic(fmt.Errorf("net/http: Client Transport of type %T doesn't support CancelRequest; Timeout not supported", s.RoundTripper))
+	}
+	tr.CancelRequest(req)
 }

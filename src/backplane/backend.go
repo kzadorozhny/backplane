@@ -1,9 +1,11 @@
 package backplane
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -14,13 +16,11 @@ import (
 
 // transport used by backends. test could set a mock implementation
 var transportForBackend func(backendaddr string) http.RoundTripper = func(backendaddr string) http.RoundTripper {
-	// proxyurl := &url.URL{Scheme: "http", Host: addr}
 	dialer := &net.Dialer{
 		Timeout:   3 * time.Second,
 		KeepAlive: 30 * time.Second,
 	}
 	return &http.Transport{
-		// Proxy: http.ProxyURL(proxyurl),
 		Dial: func(network, addr string) (net.Conn, error) {
 			//ignore address, always connect to the configured backend host
 			return dialer.Dial("tcp", backendaddr)
@@ -105,16 +105,100 @@ type Server struct {
 	http.RoundTripper
 	stats.Counting
 	RateLimiter *stats.EMARateLimiter
+	HealthChecker
 }
 
 func NewServer(cf *config.Server) *Server {
 	t := transportForBackend(cf.Address)
 	ct := &stats.CountersCollectingRoundTripper{RoundTripper: t, RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT)}
 	//TODO: insert limiters here
+	//TODO: make prober url configurable
+	proberUrl := fmt.Sprintf("http://%s/", cf.Address)
+	prober := &HttpHealthChecker{Transport: ct, Url: proberUrl}
+	prober.Run()
 	return &Server{
-		Cf:           cf,
-		RoundTripper: ct,
-		Counting:     ct,
-		RateLimiter:  ct.RateLimiter,
+		Cf:            cf,
+		RoundTripper:  ct,
+		Counting:      ct,
+		RateLimiter:   ct.RateLimiter,
+		HealthChecker: prober,
 	}
+}
+
+type HealthChecker interface {
+	IsHealthy() bool
+	HealthStatus() string
+	LastStatusChange() time.Time
+}
+
+type HttpHealthChecker struct {
+	Transport  http.RoundTripper
+	Url        string
+	ticker     *time.Ticker
+	client     *http.Client
+	mux        sync.Mutex
+	isHealthy  bool
+	status     string
+	lastChange time.Time
+}
+
+func (h *HttpHealthChecker) IsHealthy() bool {
+	h.mux.Lock()
+	defer h.mux.Unlock()
+	return h.isHealthy
+}
+
+func (h *HttpHealthChecker) HealthStatus() string {
+	h.mux.Lock()
+	defer h.mux.Unlock()
+	return h.status
+}
+func (h *HttpHealthChecker) LastStatusChange() time.Time {
+	h.mux.Lock()
+	defer h.mux.Unlock()
+	return h.lastChange
+}
+
+func (h *HttpHealthChecker) runOnce() {
+	//TODO: make method configurable
+	glog.V(2).Infof("Healthcheck request %s", h.Url)
+	starttime := time.Now()
+	resp, err := h.client.Head(h.Url)
+	endtime := time.Now()
+	d := endtime.Sub(starttime)
+	glog.V(2).Infof("Healthcheck %s in %s response %s err %s", h.Url, d, resp, err)
+	h.mux.Lock()
+	defer h.mux.Unlock()
+	oldIsHealthy := h.isHealthy
+	switch {
+	case err != nil:
+		h.status = fmt.Sprintf("error: %s in %s", err, d)
+		h.isHealthy = false
+	case resp.StatusCode != 200:
+		h.status = fmt.Sprintf("error: status %s in %s", resp.Status, d)
+		h.isHealthy = false
+	default:
+		h.status = fmt.Sprintf("status %s in %s", resp.Status, d)
+		h.isHealthy = true
+	}
+	if oldIsHealthy != h.isHealthy || h.lastChange.IsZero() {
+		h.lastChange = endtime
+	}
+}
+
+func (h *HttpHealthChecker) Run() {
+	//TODO: make prober timeout configurable
+	h.client = &http.Client{Transport: h.Transport, Timeout: 5 * time.Second}
+	h.ticker = time.NewTicker(10 * time.Second)
+	go func() {
+		h.runOnce()
+		for now := range h.ticker.C {
+			glog.V(2).Infof("Healthcheck request at %v", now)
+			h.runOnce()
+		}
+	}()
+}
+
+func (h *HttpHealthChecker) Stop() {
+	h.ticker.Stop()
 }

@@ -3,6 +3,7 @@ package backplane
 import (
 	"html/template"
 	"net/http"
+	"time"
 
 	"github.com/apesternikov/backplane/src/config"
 	"github.com/golang/glog"
@@ -51,8 +52,12 @@ func (bp *Backplane) Configure(cf *config.Config) error {
 	return nil
 }
 
+var funcMap = template.FuncMap{
+	"age": func(t time.Time) time.Duration { return time.Now().Sub(t) },
+}
+
 func (bp *Backplane) handleStats(w http.ResponseWriter, req *http.Request) {
-	t, err := template.ParseFiles("stats.html")
+	t, err := template.New("stats.html").Funcs(funcMap).ParseFiles("stats.html")
 	if err != nil {
 		glog.Errorf("unable to parse template: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
