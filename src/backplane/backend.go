@@ -1,6 +1,7 @@
 package backplane
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -71,16 +72,38 @@ func (b *Backend) Stop() {
 
 // Balancer implements http.RoundTripper and routes requests to configured backend servers
 type Balancer struct {
-	cf       *config.HttpBackend
-	handlers []http.RoundTripper
-	idx      int64
+	cf             *config.HttpBackend
+	handlers       []*Server
+	mux            sync.Mutex //TODO: profile and decide if atomic ops are feasible
+	activeHandlers []*Server
+	idx            int64
 }
+
+func (b *Balancer) rebuildActive() {
+	activeHandlers := make([]*Server, 0, len(b.handlers))
+	for _, handler := range b.handlers {
+		if handler.IsHealthy() {
+			activeHandlers = append(activeHandlers, handler)
+		}
+	}
+	b.mux.Lock()
+	b.activeHandlers = activeHandlers
+	b.mux.Unlock()
+}
+
+var NoHealthyBackendAvailable = errors.New("No healthy backend server available")
 
 func (b *Balancer) RoundTrip(r *http.Request) (*http.Response, error) {
 	idx := atomic.AddInt64(&b.idx, 1)
 	glog.V(3).Infof("Balancer serving %v using %d", r.URL, idx%int64(len(b.handlers)))
 	glog.V(3).Infof("Request %v", r)
-	h := b.handlers[idx%int64(len(b.handlers))]
+	b.mux.Lock()
+	if len(b.activeHandlers) == 0 {
+		b.mux.Unlock()
+		return nil, NoHealthyBackendAvailable
+	}
+	h := b.activeHandlers[idx%int64(len(b.activeHandlers))]
+	b.mux.Unlock()
 	//TODO: handle error and redirect to another server
 	resp, err := h.RoundTrip(r)
 	glog.V(3).Infof("Response %v", resp)
@@ -91,7 +114,7 @@ func NewBalancer(cf *config.HttpBackend) (b *Balancer, servers []*Server) {
 	b = &Balancer{cf: cf}
 	servers = make([]*Server, 0, len(cf.Server))
 	for _, scf := range cf.Server {
-		s := NewServer(scf)
+		s := NewServer(scf, b.rebuildActive)
 		b.handlers = append(b.handlers, s)
 		servers = append(servers, s)
 	}
@@ -108,13 +131,13 @@ type Server struct {
 	HealthChecker
 }
 
-func NewServer(cf *config.Server) *Server {
+func NewServer(cf *config.Server, onStateUpdate func()) *Server {
 	t := transportForBackend(cf.Address)
 	ct := &stats.CountersCollectingRoundTripper{RoundTripper: t, RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT)}
 	//TODO: insert limiters here
 	//TODO: make prober url configurable
 	proberUrl := fmt.Sprintf("http://%s/", cf.Address)
-	prober := &HttpHealthChecker{Transport: ct, Url: proberUrl}
+	prober := &HttpHealthChecker{Transport: t, Url: proberUrl, onStateUpdate: onStateUpdate}
 	prober.Run()
 	return &Server{
 		Cf:            cf,
@@ -132,14 +155,15 @@ type HealthChecker interface {
 }
 
 type HttpHealthChecker struct {
-	Transport  http.RoundTripper
-	Url        string
-	ticker     *time.Ticker
-	client     *http.Client
-	mux        sync.Mutex
-	isHealthy  bool
-	status     string
-	lastChange time.Time
+	Transport     http.RoundTripper
+	Url           string
+	ticker        *time.Ticker
+	client        *http.Client
+	mux           sync.Mutex
+	isHealthy     bool
+	status        string
+	lastChange    time.Time
+	onStateUpdate func() // called when server status changed with mutex UNlocked
 }
 
 func (h *HttpHealthChecker) IsHealthy() bool {
@@ -168,7 +192,6 @@ func (h *HttpHealthChecker) runOnce() {
 	d := endtime.Sub(starttime)
 	glog.V(2).Infof("Healthcheck %s in %s response %s err %s", h.Url, d, resp, err)
 	h.mux.Lock()
-	defer h.mux.Unlock()
 	oldIsHealthy := h.isHealthy
 	switch {
 	case err != nil:
@@ -181,8 +204,14 @@ func (h *HttpHealthChecker) runOnce() {
 		h.status = fmt.Sprintf("status %s in %s", resp.Status, d)
 		h.isHealthy = true
 	}
+	var changed bool
 	if oldIsHealthy != h.isHealthy || h.lastChange.IsZero() {
 		h.lastChange = endtime
+		changed = true
+	}
+	h.mux.Unlock()
+	if changed && h.onStateUpdate != nil {
+		h.onStateUpdate()
 	}
 }
 
