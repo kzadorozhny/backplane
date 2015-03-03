@@ -6,11 +6,13 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/apesternikov/backplane/src/backplane/stats"
 
 	"github.com/apesternikov/backplane/src/config"
 	"github.com/golang/glog"
+	"github.com/gorilla/context"
 )
 
 const FIXME_RATE_LIMIT = 100000
@@ -31,7 +33,7 @@ type Route struct {
 }
 
 type Frontend struct {
-	http.Handler
+	Handler     http.Handler
 	Cf          *config.HttpFrontend
 	srv         *http.Server
 	Sln, TlsSln *StoppableListener
@@ -41,6 +43,53 @@ type Frontend struct {
 	RateLimiter *stats.EMARateLimiter
 	Vhosts      []*Vhost
 	tlsconf     *tls.Config
+}
+
+type statsCollectingResponseWriter struct {
+	wrapped      http.ResponseWriter
+	ResponseCode int
+	ResponseSize int
+}
+
+func (s *statsCollectingResponseWriter) Header() http.Header {
+	return s.wrapped.Header()
+}
+func (s *statsCollectingResponseWriter) Write(data []byte) (int, error) {
+	sz, err := s.wrapped.Write(data)
+	s.ResponseSize = s.ResponseSize + sz
+	return sz, err
+}
+func (s *statsCollectingResponseWriter) WriteHeader(code int) {
+	s.ResponseCode = code
+	s.wrapped.WriteHeader(code)
+}
+
+func (f *Frontend) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	resp := statsCollectingResponseWriter{wrapped: w}
+	log := AppendRequestLog(req)
+	host, _, err := net.SplitHostPort(req.RemoteAddr)
+	if err == nil {
+		log.ClientIp = host
+	} else {
+		log.ClientIp = req.RemoteAddr
+	}
+	log.TimeTNs = time.Now().UnixNano()
+	log.Method = req.Method
+	log.RequestUri = req.RequestURI
+	log.HttpVersion = req.Proto
+	log.Referrer = req.Referer()
+	log.UserAgent = req.UserAgent()
+	log.Frontend = f.Cf.BindAddress
+	log.IsTls = (req.TLS != nil)
+
+	f.Handler.ServeHTTP(&resp, req)
+
+	log.StatusCode = int64(resp.ResponseCode)
+	log.ResponseSize = int64(resp.ResponseSize)
+	endtime := time.Now().UnixNano()
+	log.FrontendLatencyNs = endtime - log.TimeTNs
+
+	context.Clear(req)
 }
 
 func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, error) {

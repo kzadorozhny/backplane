@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package requestlog;
+
+//Common log format http://en.wikipedia.org/wiki/Common_Log_Format
+//127.0.0.1 user-identifier frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326
+
+//HTTP request log
+message item {
+	string client_ip = 1;    // "10.10.0.1"
+	int64 time_t_ns = 2; 	 // unix time_t in ns
+	string method = 3;       // "GET"
+	string request_uri = 4;		 // "/apache_pb.gif"
+	string http_version = 5; // "HTTP/1.0"
+	int64 status_code = 6;   // 200
+	int64 response_size = 7; // 2326
+
+	string referrer = 8;
+	string user_agent = 9;
+
+	string frontend = 10;
+	bool is_tls = 11;
+	string vhost = 12; //host name or empty for default
+	string handler_path = 13;
+	string backend_name = 14;
+	string server_address = 15;
+
+	int64 frontend_latency_ns = 100; //latency measured at the frontend, including all potential queue times
+	int64 server_latency_ns = 101; //server latency
+}

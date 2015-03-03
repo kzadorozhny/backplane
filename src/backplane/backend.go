@@ -42,6 +42,8 @@ type Backend struct {
 
 func (b *Backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	glog.V(3).Infof("Backend %s serving %s %s", b.Cf.Name, r.Host, r.URL)
+	log := GetRequestLog(r)
+	log.BackendName = b.Cf.Name
 	b.proxy.ServeHTTP(w, r)
 }
 
