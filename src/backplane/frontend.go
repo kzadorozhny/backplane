@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bradfitz/http2"
+
 	"github.com/apesternikov/backplane/src/backplane/stats"
 
 	"github.com/apesternikov/backplane/src/config"
@@ -144,11 +146,14 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 			return nil, err
 		}
 		f.tlsconf = &tls.Config{
-			NextProtos:   []string{"http/1.1"},
+			// NextProtos:   []string{"http/1.1"}, //should be updated after the http/2.0 config
 			Certificates: []tls.Certificate{cert},
 			MinVersion:   tls.VersionTLS10,
 		}
 		f.tlsconf.BuildNameToCertificate()
+		f.srv.TLSConfig = f.tlsconf
+		http2.ConfigureServer(f.srv, nil)
+		f.tlsconf.NextProtos = append(f.tlsconf.NextProtos, "http/1.1")
 	}
 	return f, nil
 }
