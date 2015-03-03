@@ -763,6 +763,7 @@
 		</tr>
 		{{ end }}
 		<tr class="backend">
+			{{ $cnt := .GetCounters }}
 			<td class=ac>
 				<a name="page2rss/Backend"></a>
 				<a class=lfsb href="#page2rss/Backend">Total for backend</a>
@@ -772,13 +773,11 @@
 			<td>{{ .RateLimiter.TargetQPS }}</td>
 			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
 
-			<td>18</td>
-			<td>200</td>
+			<td>{{ $cnt.CurActiveSessions }}</td>
+			<td>{{ $cnt.MaxActiveSessions }}</td>
 			<td>
 				<u>
-					54
-					<span class="rls">1</span>
-					463
+					X
 					<div class=tips>
 						<table class=det>
 							<tr>
