@@ -2,10 +2,21 @@ syntax = "proto3";
 
 package config;
 
+message auth {
+	message http_basic_t {
+		string realm = 1;
+		map<string,string> userpass = 2;
+	}
+	oneof auth_types {
+		http_basic_t http_basic = 1;
+	}
+}
+
 message http_handler {
 	// path matching rules are explained here http://golang.org/pkg/net/http/#ServeMux
 	string path = 1;
 	string backend_name = 2;	
+	auth auth = 3;
 }
 
 message http_frontend {

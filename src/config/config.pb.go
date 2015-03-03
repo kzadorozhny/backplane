@@ -9,6 +9,7 @@ It is generated from these files:
 	config.proto
 
 It has these top-level messages:
+	Auth
 	HttpHandler
 	HttpFrontend
 	Server
@@ -22,15 +23,54 @@ import proto "github.com/golang/protobuf/proto"
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 
+type Auth struct {
+	HttpBasic *AuthHttpBasicT `protobuf:"bytes,1,opt,name=http_basic" json:"http_basic,omitempty"`
+}
+
+func (m *Auth) Reset()         { *m = Auth{} }
+func (m *Auth) String() string { return proto.CompactTextString(m) }
+func (*Auth) ProtoMessage()    {}
+
+func (m *Auth) GetHttpBasic() *AuthHttpBasicT {
+	if m != nil {
+		return m.HttpBasic
+	}
+	return nil
+}
+
+type AuthHttpBasicT struct {
+	Realm    string            `protobuf:"bytes,1,opt,name=realm" json:"realm,omitempty"`
+	Userpass map[string]string `protobuf:"bytes,2,rep,name=userpass" json:"userpass,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+}
+
+func (m *AuthHttpBasicT) Reset()         { *m = AuthHttpBasicT{} }
+func (m *AuthHttpBasicT) String() string { return proto.CompactTextString(m) }
+func (*AuthHttpBasicT) ProtoMessage()    {}
+
+func (m *AuthHttpBasicT) GetUserpass() map[string]string {
+	if m != nil {
+		return m.Userpass
+	}
+	return nil
+}
+
 type HttpHandler struct {
 	// path matching rules are explained here http://golang.org/pkg/net/http/#ServeMux
 	Path        string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
 	BackendName string `protobuf:"bytes,2,opt,name=backend_name" json:"backend_name,omitempty"`
+	Auth        *Auth  `protobuf:"bytes,3,opt,name=auth" json:"auth,omitempty"`
 }
 
 func (m *HttpHandler) Reset()         { *m = HttpHandler{} }
 func (m *HttpHandler) String() string { return proto.CompactTextString(m) }
 func (*HttpHandler) ProtoMessage()    {}
+
+func (m *HttpHandler) GetAuth() *Auth {
+	if m != nil {
+		return m.Auth
+	}
+	return nil
+}
 
 type HttpFrontend struct {
 	Name        string               `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`

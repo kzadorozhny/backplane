@@ -44,6 +44,7 @@ type Frontend struct {
 }
 
 func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, error) {
+	var err error
 	hs := &HostSwitch{handlers: make(map[string]http.Handler)}
 	chs := &stats.CountersCollectingHandler{Handler: hs, RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT)}
 	f := &Frontend{Cf: cf, Handler: chs, Counting: chs, RateLimiter: chs.RateLimiter}
@@ -71,6 +72,12 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 			h := backends(hc.BackendName)
 			if h == nil {
 				return nil, fmt.Errorf("Unknown backend %s", hc.BackendName)
+			}
+			if hc.Auth != nil {
+				h, err = AuthWrapper(hc.Auth, h)
+				if err != nil {
+					return nil, err
+				}
 			}
 			ch := &stats.CountersCollectingHandler{Handler: h, RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT)}
 			mux.Handle(hc.Path, ch)
