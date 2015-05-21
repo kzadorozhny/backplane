@@ -5,10 +5,13 @@ import (
 	"time"
 )
 
-const WQ = 0.05
+const wq = 0.05
 const nanosInSeconds = float64(time.Second)
 const iNanosInSeconds = int64(time.Second)
 
+// EMARateLimiter is a rate limiter used EMA of momentary rate.
+// The query is rejected if EMA of the rate would go above the configured
+// limit if the query is accepted
 type EMARateLimiter struct {
 	timeOfLastRequest                           int64
 	avgWaitingNs                                int64
@@ -18,6 +21,7 @@ type EMARateLimiter struct {
 	requestThrottledCount, requestAcceptedCount int64
 }
 
+//NewEMARateLimiter constructs a new EMA rate limiter with specified EMA cutoff
 func NewEMARateLimiter(maxQPS float64) *EMARateLimiter {
 	return &EMARateLimiter{
 		timeOfLastRequest: time.Now().UnixNano(),
@@ -39,12 +43,14 @@ avgQPS is lower than target qps: increase cutoff if request weight is
 less than target req weight we drop the request
 */
 
+// Accepted checks if query at this moment should be accepted or rejected.
+// If accepted, the EMA rate limiter updates its current EMA
 func (e *EMARateLimiter) Accepted() bool {
 	now := time.Now().UnixNano()
 	instWaiting := now - e.timeOfLastRequest
 	for {
 		avgWaitingNs := atomic.LoadInt64(&e.avgWaitingNs)
-		newavgWaitingNs := int64((1.-WQ)*float64(avgWaitingNs) + WQ*float64(instWaiting))
+		newavgWaitingNs := int64((1.-wq)*float64(avgWaitingNs) + wq*float64(instWaiting))
 		// glog.V(3).Infof("avgWaitingNs %d newavgWaitingNs %d", avgWaitingNs, newavgWaitingNs)
 		if newavgWaitingNs < e.targetWaitingNs {
 			atomic.AddInt64(&e.requestThrottledCount, 1)
@@ -69,22 +75,29 @@ func (e *EMARateLimiter) Accepted() bool {
 	return true
 }
 
+// TargetQPS returns configured EMA cutoff rate
 func (e *EMARateLimiter) TargetQPS() int64 {
 	return iNanosInSeconds / e.targetWaitingNs
 }
 
+// MaxQPS returns max achieved EMA(QPS) since the rate limiter created
 func (e *EMARateLimiter) MaxQPS() int64 {
 	return iNanosInSeconds / e.minWaitingNs
 }
 
+// TotalAcceptedCount returs total number of accepted queries over the
+// limiter lifetime
 func (e *EMARateLimiter) TotalAcceptedCount() int64 {
 	return atomic.LoadInt64(&e.requestAcceptedCount)
 }
 
+// TotalRejectedCount returs total number of rejected queries over the
+// limiter lifetime
 func (e *EMARateLimiter) TotalRejectedCount() int64 {
 	return atomic.LoadInt64(&e.requestThrottledCount)
 }
 
+// CurrentQPS returns current EMA of QPS
 func (e *EMARateLimiter) CurrentQPS() int64 {
 	return iNanosInSeconds / atomic.LoadInt64(&e.avgWaitingNs)
 }

@@ -103,42 +103,6 @@
 				<br>
 				Running tasks: 1/11; idle = 56 %
 				<br></td>
-			<td align="center" nowrap>
-				<table class="lgd">
-					<tr>
-						<td class="active4">&nbsp;</td>
-						<td class="noborder">active UP</td>
-						<td class="backup4">&nbsp;</td>
-						<td class="noborder">backup UP</td>
-					</tr>
-					<tr>
-						<td class="active3"></td>
-						<td class="noborder">active UP, going down</td>
-						<td class="backup3"></td>
-						<td class="noborder">backup UP, going down</td>
-					</tr>
-					<tr>
-						<td class="active2"></td>
-						<td class="noborder">active DOWN, going up</td>
-						<td class="backup2"></td>
-						<td class="noborder">backup DOWN, going up</td>
-					</tr>
-					<tr>
-						<td class="active0"></td>
-						<td class="noborder">active or backup DOWN &nbsp;</td>
-						<td class="active9"></td>
-						<td class="noborder">not checked</td>
-					</tr>
-					<tr>
-						<td class="maintain"></td>
-						<td class="noborder" colspan="3">active or backup DOWN for maintenance (MAINT) &nbsp;</td>
-					</tr>
-					<tr>
-						<td class="active8"></td>
-						<td class="noborder" colspan="3">active or backup SOFT STOPPED for maintenance &nbsp;</td>
-					</tr>
-				</table>
-				Note: "NOLB"/"DRAIN" = UP with load-balancing disabled.
 		</tr>
 	</table>
 	{{ range .Frontends }}

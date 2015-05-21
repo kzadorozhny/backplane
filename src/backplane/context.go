@@ -11,7 +11,7 @@ type key int
 
 var mykey key
 
-// GetContext returns a value for this package from the request values.
+// GetRequestLog returns a value for request log associated with http request
 func GetRequestLog(r *http.Request) *requestlog.Item {
 	if rv := context.Get(r, &mykey); rv != nil {
 		return rv.(*requestlog.Item)
@@ -19,7 +19,7 @@ func GetRequestLog(r *http.Request) *requestlog.Item {
 	return nil
 }
 
-// SetMyKey sets a value for this package in the request values.
+// AppendRequestLog attaches request log record to http request
 func AppendRequestLog(r *http.Request) *requestlog.Item {
 	it := &requestlog.Item{}
 	context.Set(r, &mykey, it)

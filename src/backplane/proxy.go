@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/apesternikov/backplane/src/backplane/static"
+
 	"github.com/apesternikov/backplane/src/config"
 	"github.com/golang/glog"
 )
@@ -56,14 +58,16 @@ var funcMap = template.FuncMap{
 	"age": func(t time.Time) time.Duration { return time.Now().Sub(t) },
 }
 
+var statstpl = template.Must(template.New("stats.html").Funcs(funcMap).Parse(string(static.Stats_html.Data)))
+
 func (bp *Backplane) handleStats(w http.ResponseWriter, req *http.Request) {
-	t, err := template.New("stats.html").Funcs(funcMap).ParseFiles("stats.html")
-	if err != nil {
-		glog.Errorf("unable to parse template: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	err = t.Execute(w, bp)
+	// statstpl, err := template.New("stats.html").Funcs(funcMap).ParseFiles("stats.html")
+	// if err != nil {
+	// 	glog.Errorf("unable to parse template: %s", err)
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// 	return
+	// }
+	err := statstpl.Execute(w, bp)
 	if err != nil {
 		glog.Errorf("unable to execute template: %s", err)
 	}
