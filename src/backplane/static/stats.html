@@ -111,7 +111,7 @@
 		<tr class="titre">
 			<th class="pxname" width="10%">
 				<a name="http-in"></a>
-				<a class=px href="#http-in">Frontend {{ .Cf.BindAddress }}</a>
+				<a class=px href="#http-in">Frontend {{ .Cf.BindHttp }}</a>
 			</th>
 			<th class="empty" width="90%"></th>
 		</tr>
@@ -127,9 +127,9 @@
 			<th>Active Sessions</th>
 			<th>Totoal Sessions</th>
 		</tr>
-		{{ if .Cf.BindAddress }}
+		{{ if .Cf.BindHttp }}
 		<tr class="active4">
-			<td><a href="http://{{ .Cf.BindAddress }}/">{{.Cf.BindAddress}}</a></td>
+			<td><a href="http://{{ .Cf.BindHttp }}/">{{.Cf.BindHttp}}</a></td>
 			{{ with .Sln }}
 			<td>{{ .RateLimiter.CurrentQPS }}</td>
 			<td>{{ .RateLimiter.MaxQPS }}</td>
@@ -140,9 +140,9 @@
 			{{ end }}
 		</tr>
 		{{ end }}
-		{{ if .Cf.BindSsl }}
+		{{ if .Cf.BindHttps }}
 		<tr class="active4">
-			<td><a href="https://{{ .Cf.BindSsl }}/">{{.Cf.BindSsl}}</a></td>
+			<td><a href="https://{{ .Cf.BindHttps }}/">{{.Cf.BindHttps}}</a></td>
 			{{ with .TlsSln }}
 			<td>{{ .RateLimiter.CurrentQPS }}</td>
 			<td>{{ .RateLimiter.MaxQPS }}</td>

@@ -73,12 +73,13 @@ func (m *HttpHandler) GetAuth() *Auth {
 }
 
 type HttpFrontend struct {
-	Name        string               `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	BindAddress string               `protobuf:"bytes,2,opt,name=bind_address" json:"bind_address,omitempty"`
-	Host        []*HttpFrontendVhost `protobuf:"bytes,3,rep,name=host" json:"host,omitempty"`
-	BindSsl     string               `protobuf:"bytes,4,opt,name=bind_ssl" json:"bind_ssl,omitempty"`
-	SslCert     string               `protobuf:"bytes,5,opt,name=ssl_cert" json:"ssl_cert,omitempty"`
-	SslKey      string               `protobuf:"bytes,6,opt,name=ssl_key" json:"ssl_key,omitempty"`
+	Name      string               `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	BindHttp  string               `protobuf:"bytes,2,opt,name=bind_http" json:"bind_http,omitempty"`
+	Host      []*HttpFrontendVhost `protobuf:"bytes,3,rep,name=host" json:"host,omitempty"`
+	BindHttps string               `protobuf:"bytes,4,opt,name=bind_https" json:"bind_https,omitempty"`
+	SslCert   []string             `protobuf:"bytes,5,rep,name=ssl_cert" json:"ssl_cert,omitempty"`
+	// TODO: check if pattern is malformed
+	SslCertMask string `protobuf:"bytes,7,opt,name=ssl_cert_mask" json:"ssl_cert_mask,omitempty"`
 }
 
 func (m *HttpFrontend) Reset()         { *m = HttpFrontend{} }

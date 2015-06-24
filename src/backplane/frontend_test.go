@@ -54,7 +54,7 @@ func (tc *urlTestCase) run(t *testing.T, b http.Handler, i int) {
 func TestDomainsNoDefault(t *testing.T) {
 	//TODO: check counters
 	b, err := NewFrontend(mustFEFromText(`
-		bind_address: ":80"
+		bind_http: ":80"
 		host: <
 			domain: "one.com"
 			domain: "one.net"
@@ -80,7 +80,7 @@ func TestDomainsNoDefault(t *testing.T) {
 func TestDomainsWithDefault(t *testing.T) {
 	//TODO: check counters
 	b, err := NewFrontend(mustFEFromText(`
-		bind_address: ":80"
+		bind_http: ":80"
 		host: <
 			default: true
 			handler: <
@@ -106,7 +106,7 @@ func TestDomainsWithDefault(t *testing.T) {
 func TestPaths(t *testing.T) {
 	//TODO: check counters
 	b, err := NewFrontend(mustFEFromText(`
-		bind_address: ":80"
+		bind_http: ":80"
 		host: <
 			default: true
 			handler: <

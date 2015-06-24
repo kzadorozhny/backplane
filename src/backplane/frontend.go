@@ -81,7 +81,7 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	log.HttpVersion = req.Proto
 	log.Referrer = req.Referer()
 	log.UserAgent = req.UserAgent()
-	log.Frontend = f.Cf.BindAddress
+	log.Frontend = f.Cf.BindHttp
 	log.IsTls = (req.TLS != nil)
 
 	f.Handler.ServeHTTP(&resp, req)
@@ -100,7 +100,7 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 	chs := &stats.CountersCollectingHandler{Handler: hs, RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT)}
 	f := &Frontend{Cf: cf, Handler: chs, Counting: chs, RateLimiter: chs.RateLimiter}
 
-	if cf.BindAddress == "" {
+	if cf.BindHttp == "" {
 		return nil, fmt.Errorf("frontend %s: Bind address is empty", cf.Name)
 	}
 	for i, vh := range cf.Host {
@@ -137,20 +137,28 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 		}
 	}
 	f.srv = &http.Server{Handler: f}
-	//TODO: configure all backends and routes before serving
 	//TODO: handle error (raised if l.Accept errors)
-
-	if f.Cf.SslKey != "" {
-		cert, err := tls.X509KeyPair([]byte(f.Cf.SslCert), []byte(f.Cf.SslKey))
-		if err != nil {
-			return nil, err
-		}
+	if len(f.Cf.SslCert) != 0 || f.Cf.SslCertMask != "" {
 		f.tlsconf = &tls.Config{
 			// NextProtos:   []string{"http/1.1"}, //should be updated after the http/2.0 config
-			Certificates: []tls.Certificate{cert},
+			Certificates: nil, //[]tls.Certificate{},
 			MinVersion:   tls.VersionTLS10,
 		}
+		if f.Cf.SslCertMask != "" {
+			f.tlsconf.Certificates, err = LoadCertsByMask(f.Cf.SslCertMask)
+			if err != nil {
+				return nil, err
+			}
+		}
+		for _, inlinecert := range f.Cf.SslCert {
+			cert, err := X509KeyPairFromMem([]byte(inlinecert))
+			if err != nil {
+				return nil, err
+			}
+			f.tlsconf.Certificates = append(f.tlsconf.Certificates, cert)
+		}
 		f.tlsconf.BuildNameToCertificate()
+		glog.V(1).Infof("configured TLS certificates: %v", f.tlsconf.NameToCertificate)
 		f.srv.TLSConfig = f.tlsconf
 		http2.ConfigureServer(f.srv, nil)
 		f.tlsconf.NextProtos = append(f.tlsconf.NextProtos, "http/1.1")
@@ -159,9 +167,9 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 }
 
 func (f *Frontend) Listen() error {
-	if f.Cf.BindAddress != "" {
-		glog.V(2).Infof("frontend listening on http://%s/", f.Cf.BindAddress)
-		ln, err := net.Listen("tcp", f.Cf.BindAddress)
+	if f.Cf.BindHttp != "" {
+		glog.V(2).Infof("frontend listening on http://%s/", f.Cf.BindHttp)
+		ln, err := net.Listen("tcp", f.Cf.BindHttp)
 		if err != nil {
 			return err
 		}
@@ -169,7 +177,7 @@ func (f *Frontend) Listen() error {
 	}
 
 	if f.tlsconf != nil {
-		addr := f.Cf.BindSsl
+		addr := f.Cf.BindHttps
 		if addr == "" {
 			addr = ":https"
 		}
