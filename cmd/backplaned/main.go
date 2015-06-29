@@ -8,6 +8,8 @@ import (
 
 	"github.com/apesternikov/backplane/src/backplane"
 	"github.com/apesternikov/backplane/src/config"
+
+	_ "net/http/pprof"
 )
 
 var cf = flag.String("c", "/usr/local/etc/backplaned.conf", "Config file location")
