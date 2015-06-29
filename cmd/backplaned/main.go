@@ -9,6 +9,7 @@ import (
 	"github.com/apesternikov/backplane/src/backplane"
 	"github.com/apesternikov/backplane/src/config"
 
+	"net/http"
 	_ "net/http/pprof"
 )
 
@@ -31,6 +32,8 @@ func main() {
 		glog.Fatalf("Unable to create backplane: %s", err)
 	}
 
-	var done chan struct{}
-	<-done
+	glog.Fatal(http.ListenAndServe("localhost:6060", nil))
+	// wait forever
+	// var done chan struct{}
+	// <-done
 }
