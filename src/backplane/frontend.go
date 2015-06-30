@@ -136,7 +136,11 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 			vhost.Routes = append(vhost.Routes, r)
 		}
 	}
-	f.srv = &http.Server{Handler: f}
+	f.srv = &http.Server{
+		Handler:      f,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+	}
 	//TODO: handle error (raised if l.Accept errors)
 	if len(f.Cf.SslCert) != 0 || f.Cf.SslCertMask != "" {
 		f.tlsconf = &tls.Config{
