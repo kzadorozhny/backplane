@@ -13,7 +13,10 @@ import (
 	_ "net/http/pprof"
 )
 
-var cf = flag.String("c", "/usr/local/etc/backplaned.conf", "Config file location")
+var (
+	cf          = flag.String("c", "/usr/local/etc/backplaned.conf", "Config file location")
+	debuglisten = flag.String("debuglisten", "localhost:6060", "Listen on this address for pprof and other debug")
+)
 
 func main() {
 	flag.Parse()
@@ -32,7 +35,7 @@ func main() {
 		glog.Fatalf("Unable to create backplane: %s", err)
 	}
 
-	glog.Fatal(http.ListenAndServe("localhost:6060", nil))
+	glog.Fatal(http.ListenAndServe(*debuglisten, nil))
 	// wait forever
 	// var done chan struct{}
 	// <-done
