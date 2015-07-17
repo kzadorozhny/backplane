@@ -3,9 +3,10 @@ package backplane
 import (
 	"html/template"
 	"net/http"
+	"sync"
 	"time"
 
-	"github.com/apesternikov/backplane/src/backplane/static"
+	"github.com/apesternikov/backplane/src/backplane/static/tpls"
 
 	"github.com/apesternikov/backplane/src/config"
 	"github.com/golang/glog"
@@ -58,16 +59,32 @@ var funcMap = template.FuncMap{
 	"age": func(t time.Time) time.Duration { return time.Now().Sub(t) },
 }
 
-var statstpl = template.Must(template.New("stats.html").Funcs(funcMap).Parse(string(static.Stats_html.Data)))
+var (
+	statstpl *template.Template
+	tplmux   sync.Mutex
+)
+
+func StatsTemplate() *template.Template {
+	tplmux.Lock()
+	defer tplmux.Unlock()
+	changed, err := tpls.Stats_html.Refresh()
+	if err != nil {
+		panic(err) //only possible in dev mode
+	}
+	//TODO: race condition
+	if statstpl == nil || changed {
+		t, err := template.New(tpls.Stats_html.Filename).Funcs(funcMap).Parse(string(tpls.Stats_html.Data))
+		if err != nil {
+			glog.Errorf("Error parsing template %s: %s", tpls.Stats_html.Filename, err)
+			return statstpl //return old value
+		}
+		statstpl = t
+	}
+	return statstpl
+}
 
 func (bp *Backplane) handleStats(w http.ResponseWriter, req *http.Request) {
-	// statstpl, err := template.New("stats.html").Funcs(funcMap).ParseFiles("stats.html")
-	// if err != nil {
-	// 	glog.Errorf("unable to parse template: %s", err)
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	return
-	// }
-	err := statstpl.Execute(w, bp)
+	err := StatsTemplate().Execute(w, bp)
 	if err != nil {
 		glog.Errorf("unable to execute template: %s", err)
 	}

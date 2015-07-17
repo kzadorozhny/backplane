@@ -79,7 +79,8 @@ type HttpFrontend struct {
 	BindHttps string               `protobuf:"bytes,4,opt,name=bind_https" json:"bind_https,omitempty"`
 	SslCert   []string             `protobuf:"bytes,5,rep,name=ssl_cert" json:"ssl_cert,omitempty"`
 	// TODO: check if pattern is malformed
-	SslCertMask string `protobuf:"bytes,7,opt,name=ssl_cert_mask" json:"ssl_cert_mask,omitempty"`
+	SslCertMask  string `protobuf:"bytes,7,opt,name=ssl_cert_mask" json:"ssl_cert_mask,omitempty"`
+	ServerString string `protobuf:"bytes,8,opt,name=server_string" json:"server_string,omitempty"`
 }
 
 func (m *HttpFrontend) Reset()         { *m = HttpFrontend{} }
