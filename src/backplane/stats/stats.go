@@ -92,7 +92,7 @@ var RateLimited = errors.New("Rate Limited")
 
 func (s *CountersCollectingRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	tr := trace.New(s.TraceFamily, r.RequestURI)
-	tr.LazyPrintf("Request: %v", r)
+	tr.LazyPrintf("Request: %#v", r)
 	defer tr.Finish()
 	if s.RateLimiter != nil {
 		if !s.RateLimiter.Accepted() {
@@ -108,6 +108,7 @@ func (s *CountersCollectingRoundTripper) RoundTrip(r *http.Request) (*http.Respo
 		tr.LazyPrintf("Error in roundtripper: %s", err)
 		tr.SetError()
 	}
+	tr.LazyPrintf("Response: %v", resp)
 	return resp, err
 }
 

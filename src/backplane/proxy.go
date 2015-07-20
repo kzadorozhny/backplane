@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/trace"
+
 	"github.com/apesternikov/backplane/src/backplane/static/tpls"
 
 	"github.com/apesternikov/backplane/src/config"
@@ -85,9 +87,12 @@ func StatsTemplate() *template.Template {
 }
 
 func (bp *Backplane) handleStats(w http.ResponseWriter, req *http.Request) {
+	tr := trace.New("backend.internalstats", req.RequestURI)
+	defer tr.Finish()
 	hostname, err := os.Hostname()
 	if err != nil {
 		glog.Error("Unable to obtain hostname: ", err)
+		tr.LazyPrintf("Unable to obtain hostname: ", err)
 	}
 	var data = struct {
 		Backends  []*Backend
@@ -103,5 +108,6 @@ func (bp *Backplane) handleStats(w http.ResponseWriter, req *http.Request) {
 	err = StatsTemplate().Execute(w, &data)
 	if err != nil {
 		glog.Errorf("unable to execute template: %s", err)
+		tr.LazyPrintf("unable to execute template: %s", err)
 	}
 }

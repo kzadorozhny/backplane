@@ -43,12 +43,19 @@ type Backend struct {
 
 func (b *Backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tr := trace.New("backend."+b.Cf.Name, r.RequestURI)
+	tr.LazyPrintf("Request: %#v", r)
 	defer tr.Finish()
 
 	glog.V(3).Infof("Backend %s serving %s %s", b.Cf.Name, r.Host)
-	log := GetRequestLog(r)
+	log, fetr := GetRequestLogAndTrace(r)
 	log.BackendName = b.Cf.Name
+	fetr.LazyPrintf("using backend %s", b.Cf.Name)
 	b.proxy.ServeHTTP(w, r)
+	if wr, ok := w.(*stats.StatsCollectingResponseWriter); ok {
+		if wr.IsErrorResponse() {
+			tr.SetError()
+		}
+	}
 }
 
 func NewBackend(cf *config.HttpBackend) (*Backend, error) {
@@ -123,7 +130,7 @@ func NewBalancer(cf *config.HttpBackend) (b *Balancer, servers []*Server) {
 	b = &Balancer{cf: cf}
 	servers = make([]*Server, 0, len(cf.Server))
 	for _, scf := range cf.Server {
-		s := NewServer(scf, b.rebuildActive)
+		s := NewServer(cf.Name, scf, b.rebuildActive)
 		b.handlers = append(b.handlers, s)
 		servers = append(servers, s)
 	}
@@ -140,12 +147,12 @@ type Server struct {
 	HealthChecker
 }
 
-func NewServer(cf *config.Server, onStateUpdate func()) *Server {
+func NewServer(backendName string, cf *config.Server, onStateUpdate func()) *Server {
 	t := transportForBackend(cf.Address)
 	ct := &stats.CountersCollectingRoundTripper{
 		RoundTripper: t,
 		RateLimiter:  stats.NewEMARateLimiter(FIXME_RATE_LIMIT),
-		TraceFamily:  "backend." + cf.Address,
+		TraceFamily:  "server." + backendName + "." + cf.Address,
 	}
 	//TODO: insert limiters here
 	//TODO: make prober url configurable

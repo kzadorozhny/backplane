@@ -49,31 +49,6 @@ type Frontend struct {
 	tlsconf     *tls.Config
 }
 
-type statsCollectingResponseWriter struct {
-	wrapped      http.ResponseWriter
-	ResponseCode int
-	ResponseSize int
-}
-
-func (s *statsCollectingResponseWriter) Header() http.Header {
-	return s.wrapped.Header()
-}
-func (s *statsCollectingResponseWriter) Write(data []byte) (int, error) {
-	sz, err := s.wrapped.Write(data)
-	s.ResponseSize += sz
-	return sz, err
-}
-func (s *statsCollectingResponseWriter) WriteHeader(code int) {
-	s.ResponseCode = code
-	s.wrapped.WriteHeader(code)
-}
-
-func (s *statsCollectingResponseWriter) Flush() {
-	if f, ok := s.wrapped.(http.Flusher); ok {
-		f.Flush()
-	}
-}
-
 func init() {
 	trace.AuthRequest = func(req *http.Request) (any, sensitive bool) {
 		return true, true
@@ -81,8 +56,11 @@ func init() {
 }
 
 func (f *Frontend) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	resp := statsCollectingResponseWriter{wrapped: w}
-	log := AppendRequestLog(req)
+	//TODO: cache this name to aviod generating on the fly
+	tr := trace.New("frontend."+f.Cf.BindHttp, req.RequestURI)
+	defer tr.Finish()
+	resp := stats.StatsCollectingResponseWriter{ResponseWriter: w}
+	log := AppendRequestLogAndTrace(req, tr)
 	host, _, err := net.SplitHostPort(req.RemoteAddr)
 	if err == nil {
 		log.ClientIp = host
@@ -98,11 +76,8 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	log.Frontend = f.Cf.BindHttp
 	log.IsTls = (req.TLS != nil)
 
-	//TODO: cache this name to aviod generating on the fly
-	tr := trace.New("frontend."+f.Cf.BindHttp, req.RequestURI)
-	tr.LazyPrintf("Request: %v", req)
+	tr.LazyPrintf("Request: %#v", req)
 	tr.LazyLog(log, false)
-	defer tr.Finish()
 
 	f.Handler.ServeHTTP(&resp, req)
 
@@ -111,8 +86,9 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	endtime := time.Now().UnixNano()
 	log.FrontendLatencyNs = endtime - log.TimeTNs
 	tr.LazyPrintf("Response code %d", resp.ResponseCode)
+	tr.LazyPrintf("response headers %v", resp.Header())
 
-	if resp.ResponseCode != 0 && resp.ResponseCode/100 != 2 && resp.ResponseCode/100 != 2 { // !2** or 3** responses
+	if resp.IsErrorResponse() {
 		tr.SetError()
 	}
 
