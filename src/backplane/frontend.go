@@ -60,12 +60,18 @@ func (s *statsCollectingResponseWriter) Header() http.Header {
 }
 func (s *statsCollectingResponseWriter) Write(data []byte) (int, error) {
 	sz, err := s.wrapped.Write(data)
-	s.ResponseSize = s.ResponseSize + sz
+	s.ResponseSize += sz
 	return sz, err
 }
 func (s *statsCollectingResponseWriter) WriteHeader(code int) {
 	s.ResponseCode = code
 	s.wrapped.WriteHeader(code)
+}
+
+func (s *statsCollectingResponseWriter) Flush() {
+	if f, ok := s.wrapped.(http.Flusher); ok {
+		f.Flush()
+	}
 }
 
 func init() {
@@ -94,6 +100,8 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	//TODO: cache this name to aviod generating on the fly
 	tr := trace.New("frontend."+f.Cf.BindHttp, req.RequestURI)
+	tr.LazyPrintf("Request: %v", req)
+	tr.LazyLog(log, false)
 	defer tr.Finish()
 
 	f.Handler.ServeHTTP(&resp, req)

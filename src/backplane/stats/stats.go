@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"sync/atomic"
+
+	"golang.org/x/net/trace"
 )
 
 /*
@@ -54,7 +56,8 @@ func (s *Counters) out() {
 type CountersCollectingHandler struct {
 	Handler     http.Handler
 	RateLimiter *EMARateLimiter
-	stats       Counters
+	//TraceFamily string
+	stats Counters
 }
 
 func (s *CountersCollectingHandler) GetCounters() Counters {
@@ -62,7 +65,6 @@ func (s *CountersCollectingHandler) GetCounters() Counters {
 }
 
 func (s *CountersCollectingHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	// glog.V(3).Infof("handler %s in", req.RequestURI)
 	if s.RateLimiter != nil {
 		if !s.RateLimiter.Accepted() {
 			w.WriteHeader(http.StatusServiceUnavailable)
@@ -78,6 +80,7 @@ func (s *CountersCollectingHandler) ServeHTTP(w http.ResponseWriter, req *http.R
 type CountersCollectingRoundTripper struct {
 	http.RoundTripper
 	RateLimiter *EMARateLimiter
+	TraceFamily string
 	stats       Counters
 }
 
@@ -88,14 +91,23 @@ func (s *CountersCollectingRoundTripper) GetCounters() Counters {
 var RateLimited = errors.New("Rate Limited")
 
 func (s *CountersCollectingRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	tr := trace.New(s.TraceFamily, r.RequestURI)
+	tr.LazyPrintf("Request: %v", r)
+	defer tr.Finish()
 	if s.RateLimiter != nil {
 		if !s.RateLimiter.Accepted() {
+			tr.LazyPrintf("Rate limited")
+			tr.SetError()
 			return nil, RateLimited
 		}
 	}
 	s.stats.in()
 	resp, err := s.RoundTripper.RoundTrip(r)
 	s.stats.out()
+	if err != nil {
+		tr.LazyPrintf("Error in roundtripper: %s", err)
+		tr.SetError()
+	}
 	return resp, err
 }
 

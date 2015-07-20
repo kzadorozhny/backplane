@@ -3,6 +3,7 @@ package backplane
 import (
 	"html/template"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -84,7 +85,22 @@ func StatsTemplate() *template.Template {
 }
 
 func (bp *Backplane) handleStats(w http.ResponseWriter, req *http.Request) {
-	err := StatsTemplate().Execute(w, bp)
+	hostname, err := os.Hostname()
+	if err != nil {
+		glog.Error("Unable to obtain hostname: ", err)
+	}
+	var data = struct {
+		Backends  []*Backend
+		Frontends []*Frontend
+		Pid       int
+		Hostname  string
+	}{
+		bp.Backends,
+		bp.Frontends,
+		os.Getpid(),
+		hostname,
+	}
+	err = StatsTemplate().Execute(w, &data)
 	if err != nil {
 		glog.Errorf("unable to execute template: %s", err)
 	}

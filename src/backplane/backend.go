@@ -60,7 +60,10 @@ func NewBackend(cf *config.HttpBackend) (*Backend, error) {
 		},
 		Transport: balancer,
 	}
-	ch := &stats.CountersCollectingHandler{Handler: proxy, RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT)}
+	ch := &stats.CountersCollectingHandler{
+		Handler:     proxy,
+		RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT),
+	}
 	b := &Backend{
 		Cf:          cf,
 		proxy:       ch,
@@ -139,7 +142,11 @@ type Server struct {
 
 func NewServer(cf *config.Server, onStateUpdate func()) *Server {
 	t := transportForBackend(cf.Address)
-	ct := &stats.CountersCollectingRoundTripper{RoundTripper: t, RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT)}
+	ct := &stats.CountersCollectingRoundTripper{
+		RoundTripper: t,
+		RateLimiter:  stats.NewEMARateLimiter(FIXME_RATE_LIMIT),
+		TraceFamily:  "backend." + cf.Address,
+	}
 	//TODO: insert limiters here
 	//TODO: make prober url configurable
 	proberUrl := fmt.Sprintf("http://%s/", cf.Address)

@@ -78,14 +78,14 @@
 	<h1>
 		<a href="http://www.haproxy.org/" style="text-decoration: none;">Backplane version XXXX, released XXXXXX</a>
 	</h1>
-	<h2>Statistics Report for pid 65396</h2>
+	<h2>Statistics Report for backplaned pid {{.Pid}} on {{.Hostname}}</h2>
 	<hr width="100%" class="hr">
 	<h3>&gt; General process information</h3>
 	<table border=0>
 		<tr>
 			<td align="left" nowrap width="1%">
 				<br> <b>pid =</b>
-				65396 (process #1, nbproc = 1)
+				{{.Pid}}
 				<br> <b>uptime =</b>
 				17d 8h47m24s
 				<br>
