@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/trace"
+
 	"github.com/bradfitz/http2"
 
 	"github.com/apesternikov/backplane/src/backplane/stats"
@@ -66,6 +68,12 @@ func (s *statsCollectingResponseWriter) WriteHeader(code int) {
 	s.wrapped.WriteHeader(code)
 }
 
+func init() {
+	trace.AuthRequest = func(req *http.Request) (any, sensitive bool) {
+		return true, true
+	}
+}
+
 func (f *Frontend) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	resp := statsCollectingResponseWriter{wrapped: w}
 	log := AppendRequestLog(req)
@@ -84,12 +92,21 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	log.Frontend = f.Cf.BindHttp
 	log.IsTls = (req.TLS != nil)
 
+	//TODO: cache this name to aviod generating on the fly
+	tr := trace.New("frontend."+f.Cf.BindHttp, req.RequestURI)
+	defer tr.Finish()
+
 	f.Handler.ServeHTTP(&resp, req)
 
 	log.StatusCode = int64(resp.ResponseCode)
 	log.ResponseSize = int64(resp.ResponseSize)
 	endtime := time.Now().UnixNano()
 	log.FrontendLatencyNs = endtime - log.TimeTNs
+	tr.LazyPrintf("Response code %d", resp.ResponseCode)
+
+	if resp.ResponseCode != 0 && resp.ResponseCode/100 != 2 && resp.ResponseCode/100 != 2 { // !2** or 3** responses
+		tr.SetError()
+	}
 
 	context.Clear(req)
 }

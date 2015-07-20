@@ -13,6 +13,7 @@ import (
 	"github.com/apesternikov/backplane/src/backplane/stats"
 	"github.com/apesternikov/backplane/src/config"
 	"github.com/golang/glog"
+	"golang.org/x/net/trace"
 )
 
 // transport used by backends. test could set a mock implementation
@@ -41,7 +42,10 @@ type Backend struct {
 }
 
 func (b *Backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	glog.V(3).Infof("Backend %s serving %s %s", b.Cf.Name, r.Host, r.URL)
+	tr := trace.New("backend."+b.Cf.Name, r.RequestURI)
+	defer tr.Finish()
+
+	glog.V(3).Infof("Backend %s serving %s %s", b.Cf.Name, r.Host)
 	log := GetRequestLog(r)
 	log.BackendName = b.Cf.Name
 	b.proxy.ServeHTTP(w, r)
