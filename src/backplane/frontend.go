@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apesternikov/backplane/src/requestlog"
+
 	"golang.org/x/net/trace"
 
 	"github.com/bradfitz/http2"
@@ -91,6 +93,8 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if resp.IsErrorResponse() {
 		tr.SetError()
 	}
+
+	requestlog.SubmitLog(log)
 
 	context.Clear(req)
 }

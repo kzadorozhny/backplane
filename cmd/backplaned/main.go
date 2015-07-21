@@ -4,6 +4,8 @@ import (
 	"flag"
 	"io/ioutil"
 
+	"github.com/apesternikov/backplane/src/requestlog"
+
 	"github.com/golang/glog"
 
 	"github.com/apesternikov/backplane/src/backplane"
@@ -20,6 +22,7 @@ var (
 
 func main() {
 	flag.Parse()
+	requestlog.AfterInit()
 	glog.Infof("using config file %s", *cf)
 	textcf, err := ioutil.ReadFile(*cf)
 	if err != nil {
