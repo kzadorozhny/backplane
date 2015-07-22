@@ -1,6 +1,7 @@
 package backplane
 
 import (
+	"errors"
 	"net/http"
 
 	"golang.org/x/net/trace"
@@ -32,4 +33,14 @@ func AppendRequestLogAndTrace(r *http.Request, tr trace.Trace) *requestlog.Item 
 	c := &ctx{it: &requestlog.Item{}, tr: tr}
 	context.Set(r, &mykey, c)
 	return c.it
+}
+
+var NoSuchContext = errors.New("No such context")
+
+func LinkContext(from, to *http.Request) error {
+	if rv := context.Get(from, &mykey); rv != nil {
+		context.Set(to, &mykey, rv)
+		return nil
+	}
+	return NoSuchContext
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/http/httputil"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -50,6 +49,8 @@ func (b *Backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log, fetr := GetRequestLogAndTrace(r)
 	log.BackendName = b.Cf.Name
 	fetr.LazyPrintf("using backend %s", b.Cf.Name)
+	defer fetr.LazyPrintf("backend done")
+
 	b.proxy.ServeHTTP(w, r)
 	if wr, ok := w.(*stats.StatsCollectingResponseWriter); ok {
 		if wr.IsErrorResponse() {
@@ -60,7 +61,7 @@ func (b *Backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func NewBackend(cf *config.HttpBackend) (*Backend, error) {
 	balancer, servers := NewBalancer(cf)
-	proxy := &httputil.ReverseProxy{
+	proxy := &ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = "http"
 			req.URL.Host = req.Host
@@ -110,19 +111,26 @@ func (b *Balancer) rebuildActive() {
 var NoHealthyBackendAvailable = errors.New("No healthy backend server available")
 
 func (b *Balancer) RoundTrip(r *http.Request) (*http.Response, error) {
+	rlog, tr := GetRequestLogAndTrace(r)
+	starttime := time.Now().UnixNano()
+	tr.LazyPrintf("balancer")
+	defer tr.LazyPrintf("balancer done")
 	idx := atomic.AddInt64(&b.idx, 1)
 	glog.V(3).Infof("Balancer serving %v using %d", r.URL, idx%int64(len(b.handlers)))
 	glog.V(3).Infof("Request %v", r)
 	b.mux.Lock()
 	if len(b.activeHandlers) == 0 {
 		b.mux.Unlock()
+		tr.LazyPrintf("No healthy backend server available")
+		tr.SetError()
 		return nil, NoHealthyBackendAvailable
 	}
 	h := b.activeHandlers[idx%int64(len(b.activeHandlers))]
 	b.mux.Unlock()
-	//TODO: handle error and redirect to another server
+	//TODO: handle error and redispatch to another server
 	resp, err := h.RoundTrip(r)
 	glog.V(3).Infof("Response %v", resp)
+	rlog.ServerLatencyNs = time.Now().UnixNano() - starttime
 	return resp, err
 }
 
