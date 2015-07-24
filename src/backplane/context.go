@@ -14,25 +14,23 @@ type key int
 
 var mykey key
 
-type ctx struct {
-	it *requestlog.Item
-	tr trace.Trace
+type RequestContext struct {
+	Log *requestlog.Item
+	Tr  trace.Trace
+}
+
+// NewRequestContext attaches request context to http request
+func NewRequestContext(r *http.Request, ctx *RequestContext) *RequestContext {
+	context.Set(r, &mykey, ctx)
+	return ctx
 }
 
 // GetRequestLog returns a value for request log associated with http request
-func GetRequestLogAndTrace(r *http.Request) (rl *requestlog.Item, tr trace.Trace) {
+func GetRequestContext(r *http.Request) (ctx *RequestContext) {
 	if rv := context.Get(r, &mykey); rv != nil {
-		c := rv.(*ctx)
-		return c.it, c.tr
+		return rv.(*RequestContext)
 	}
-	return nil, nil
-}
-
-// AppendRequestLog attaches request log record to http request
-func AppendRequestLogAndTrace(r *http.Request, tr trace.Trace) *requestlog.Item {
-	c := &ctx{it: &requestlog.Item{}, tr: tr}
-	context.Set(r, &mykey, c)
-	return c.it
+	return nil
 }
 
 var NoSuchContext = errors.New("No such context")

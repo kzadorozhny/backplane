@@ -199,9 +199,9 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	res, err := transport.RoundTrip(outreq)
 	if err != nil {
 		glog.Infof("http: proxy error: %v", err)
-		_, tr := GetRequestLogAndTrace(req)
-		if tr != nil {
-			tr.LazyPrintf("http: proxy error: %v", err)
+		ctx := GetRequestContext(req)
+		if ctx != nil && ctx.Tr != nil {
+			ctx.Tr.LazyPrintf("http: proxy error: %v", err)
 		}
 		rw.WriteHeader(http.StatusInternalServerError)
 		return

@@ -33,6 +33,10 @@ message http_frontend {
 	//TODO: check if pattern is malformed
 	string ssl_cert_mask = 7; // File mask for PEM-encoded ssl key/cert bundles, like /etc/certs/*.pem
 	string server_string = 8; // String returned in HTTP String: header instead of default "Backplane"
+	double max_conn_rate = 9; //Max connection creation rate for http or unlimited
+	double ssl_max_conn_rate = 10; //Max connection creation rate for https or unlimited
+	int64 max_conns = 11; //Max number of simultaneous connections for http
+	int64 ssl_max_conns = 12; //Max number of simultaneous connections for https
 }
 
 message server {

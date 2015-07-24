@@ -61,8 +61,10 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	//TODO: cache this name to aviod generating on the fly
 	tr := trace.New("frontend."+f.Cf.BindHttp, req.RequestURI)
 	defer tr.Finish()
-	resp := stats.StatsCollectingResponseWriter{ResponseWriter: w}
-	log := AppendRequestLogAndTrace(req, tr)
+	log := &requestlog.Item{}
+	ctx := &RequestContext{Log: log, Tr: tr}
+	NewRequestContext(req, ctx)
+	resp := StatsCollectingResponseWriter{ResponseWriter: w, ServerName: f.Cf.ServerString}
 	host, _, err := net.SplitHostPort(req.RemoteAddr)
 	if err == nil {
 		log.ClientIp = host
@@ -182,7 +184,7 @@ func (f *Frontend) Listen() error {
 		if err != nil {
 			return err
 		}
-		f.Sln = NewStoppableListener(ln.(*net.TCPListener))
+		f.Sln = NewStoppableListener(ln.(*net.TCPListener), f.Cf.MaxConnRate, f.Cf.MaxConns)
 	}
 
 	if f.tlsconf != nil {
@@ -198,7 +200,7 @@ func (f *Frontend) Listen() error {
 		}
 
 		//TODO: put it in the struct so it could be actually stopped
-		sln := NewStoppableListener(ln.(*net.TCPListener))
+		sln := NewStoppableListener(ln.(*net.TCPListener), f.Cf.SslMaxConnRate, f.Cf.SslMaxConns)
 		f.TlsSln = sln
 		f.tlsListener = tls.NewListener(sln, f.tlsconf)
 

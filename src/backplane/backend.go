@@ -46,13 +46,13 @@ func (b *Backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer tr.Finish()
 
 	glog.V(3).Infof("Backend %s serving %s %s", b.Cf.Name, r.Host)
-	log, fetr := GetRequestLogAndTrace(r)
-	log.BackendName = b.Cf.Name
-	fetr.LazyPrintf("using backend %s", b.Cf.Name)
-	defer fetr.LazyPrintf("backend done")
+	ctx := GetRequestContext(r)
+	ctx.Log.BackendName = b.Cf.Name
+	ctx.Tr.LazyPrintf("using backend %s", b.Cf.Name)
+	defer ctx.Tr.LazyPrintf("backend done")
 
 	b.proxy.ServeHTTP(w, r)
-	if wr, ok := w.(*stats.StatsCollectingResponseWriter); ok {
+	if wr, ok := w.(*StatsCollectingResponseWriter); ok {
 		tr.LazyPrintf("Response %d", wr.ResponseCode)
 		tr.LazyPrintf("Response headers %v", wr.Header())
 		if wr.IsErrorResponse() {
@@ -113,7 +113,8 @@ func (b *Balancer) rebuildActive() {
 var NoHealthyBackendAvailable = errors.New("No healthy backend server available")
 
 func (b *Balancer) RoundTrip(r *http.Request) (*http.Response, error) {
-	rlog, tr := GetRequestLogAndTrace(r)
+	ctx := GetRequestContext(r)
+	tr := ctx.Tr
 	starttime := time.Now().UnixNano()
 	tr.LazyPrintf("balancer")
 	defer tr.LazyPrintf("balancer done")
@@ -132,7 +133,7 @@ func (b *Balancer) RoundTrip(r *http.Request) (*http.Response, error) {
 	//TODO: handle error and redispatch to another server
 	resp, err := h.RoundTrip(r)
 	glog.V(3).Infof("Response %v", resp)
-	rlog.ServerLatencyNs = time.Now().UnixNano() - starttime
+	ctx.Log.ServerLatencyNs = time.Now().UnixNano() - starttime
 	return resp, err
 }
 

@@ -79,8 +79,12 @@ type HttpFrontend struct {
 	BindHttps string               `protobuf:"bytes,4,opt,name=bind_https" json:"bind_https,omitempty"`
 	SslCert   []string             `protobuf:"bytes,5,rep,name=ssl_cert" json:"ssl_cert,omitempty"`
 	// TODO: check if pattern is malformed
-	SslCertMask  string `protobuf:"bytes,7,opt,name=ssl_cert_mask" json:"ssl_cert_mask,omitempty"`
-	ServerString string `protobuf:"bytes,8,opt,name=server_string" json:"server_string,omitempty"`
+	SslCertMask    string  `protobuf:"bytes,7,opt,name=ssl_cert_mask" json:"ssl_cert_mask,omitempty"`
+	ServerString   string  `protobuf:"bytes,8,opt,name=server_string" json:"server_string,omitempty"`
+	MaxConnRate    float64 `protobuf:"fixed64,9,opt,name=max_conn_rate" json:"max_conn_rate,omitempty"`
+	SslMaxConnRate float64 `protobuf:"fixed64,10,opt,name=ssl_max_conn_rate" json:"ssl_max_conn_rate,omitempty"`
+	MaxConns       int64   `protobuf:"varint,11,opt,name=max_conns" json:"max_conns,omitempty"`
+	SslMaxConns    int64   `protobuf:"varint,12,opt,name=ssl_max_conns" json:"ssl_max_conns,omitempty"`
 }
 
 func (m *HttpFrontend) Reset()         { *m = HttpFrontend{} }
