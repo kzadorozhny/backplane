@@ -2,22 +2,60 @@
 
 package stats
 
-type Limiter struct {
-	sem chan struct{}
+import "golang.org/x/net/trace"
+
+type Limiter interface {
+	Acquire(tr trace.Trace)
+	Release(tr trace.Trace)
+	Size() int
+	Limit() int
 }
 
 // Create a new limiter with n allowed items
-func NewLimiter(n int) *Limiter {
-	return &Limiter{make(chan struct{}, n)}
+func NewLimiter(n int) Limiter {
+	switch n {
+	case 0:
+		return unlimitedLimiter{}
+	default:
+		return &semaLimiter{make(chan struct{}, n)}
+	}
 }
 
-func (l *Limiter) Acquire() { l.sem <- struct{}{} }
-func (l *Limiter) Release() { <-l.sem }
+type unlimitedLimiter struct {
+}
+
+func (l unlimitedLimiter) Acquire(tr trace.Trace) {}
+func (l unlimitedLimiter) Release(tr trace.Trace) {}
+func (l unlimitedLimiter) Size() int              { return 0 }
+func (l unlimitedLimiter) Limit() int             { return 0 }
+
+type semaLimiter struct {
+	sem chan struct{}
+}
+
+func (l *semaLimiter) Acquire(tr trace.Trace) {
+	if tr != nil {
+		tr.LazyPrintf("Acquiring semalimiter out of %d", l.Limit())
+	}
+	l.sem <- struct{}{}
+	if tr != nil {
+		tr.LazyPrintf("semalimiter acquired")
+	}
+}
+func (l *semaLimiter) Release(tr trace.Trace) {
+	if tr != nil {
+		tr.LazyPrintf("releasing semalimiter")
+	}
+	<-l.sem
+	if tr != nil {
+		tr.LazyPrintf("semalimiter released")
+	}
+}
 
 // Currently used
-func (l *Limiter) Size() int { return len(l.sem) }
+func (l *semaLimiter) Size() int { return len(l.sem) }
 
 // max configured limit
-func (l *Limiter) Limit() int { return cap(l.sem) }
+func (l *semaLimiter) Limit() int { return cap(l.sem) }
 
 //TODO: timed acquire

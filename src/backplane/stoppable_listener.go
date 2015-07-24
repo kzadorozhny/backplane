@@ -22,15 +22,12 @@ type StoppableListener struct {
 	AcceptedCnt int64
 	ActiveCnt   int64
 	RateLimiter *stats.EMARateLimiter
-	Limiter     *stats.Limiter
+	Limiter     stats.Limiter
 }
 
 func NewStoppableListener(l *net.TCPListener, maxrate float64, maxallowed int64) *StoppableListener {
 	if maxrate == 0 {
 		maxrate = 999999
-	}
-	if maxallowed == 0 {
-		maxallowed = 999999
 	}
 	return &StoppableListener{
 		l,
@@ -53,14 +50,14 @@ type conn struct {
 func (c *conn) Close() error {
 	if !c.closed {
 		c.closed = true
-		c.parent.Limiter.Release()
+		c.parent.Limiter.Release(nil)
 		atomic.AddInt64(&c.parent.ActiveCnt, -1)
 	}
 	return c.Conn.Close()
 }
 
 func (sl *StoppableListener) Accept() (net.Conn, error) {
-	sl.Limiter.Acquire() //TODO: acquiring this will delay stop until sema is available
+	sl.Limiter.Acquire(nil) //TODO: acquiring this will delay stop until sema is available
 	for {
 		//Wait up to one second for a new connection
 		sl.SetDeadline(time.Now().Add(time.Second))
@@ -71,7 +68,7 @@ func (sl *StoppableListener) Accept() (net.Conn, error) {
 		select {
 		case <-sl.stop:
 			close(sl.stop)
-			sl.Limiter.Release()
+			sl.Limiter.Release(nil)
 			return nil, StoppedError
 		default:
 			//If the channel is still open, continue as normal

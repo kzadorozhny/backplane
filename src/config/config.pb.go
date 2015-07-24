@@ -116,9 +116,10 @@ func (m *HttpFrontendVhost) GetHandler() []*HttpHandler {
 }
 
 type Server struct {
-	Address string `protobuf:"bytes,1,opt,name=address" json:"address,omitempty"`
-	Weight  int64  `protobuf:"varint,2,opt,name=weight" json:"weight,omitempty"`
-	Maxconn int64  `protobuf:"varint,3,opt,name=maxconn" json:"maxconn,omitempty"`
+	Address string  `protobuf:"bytes,1,opt,name=address" json:"address,omitempty"`
+	Weight  int64   `protobuf:"varint,2,opt,name=weight" json:"weight,omitempty"`
+	Maxconn int64   `protobuf:"varint,3,opt,name=maxconn" json:"maxconn,omitempty"`
+	Maxrate float64 `protobuf:"fixed64,4,opt,name=maxrate" json:"maxrate,omitempty"`
 }
 
 func (m *Server) Reset()         { *m = Server{} }

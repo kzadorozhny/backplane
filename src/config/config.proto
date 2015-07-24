@@ -42,7 +42,8 @@ message http_frontend {
 message server {
 	string address = 1;
 	int64 weight = 2; //unused yet
-	int64 maxconn = 3; //unused yet
+	int64 maxconn = 3; //max simultaneous requests in flight
+	double maxrate = 4; //max request rate (QPS)
 }
 
 message http_backend {

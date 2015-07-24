@@ -162,7 +162,8 @@ func NewServer(backendName string, cf *config.Server, onStateUpdate func()) *Ser
 	t := transportForBackend(cf.Address)
 	ct := &stats.CountersCollectingRoundTripper{
 		RoundTripper: t,
-		RateLimiter:  stats.NewEMARateLimiter(FIXME_RATE_LIMIT),
+		RateLimiter:  stats.NewEMARateLimiter(cf.Maxrate),
+		Limiter:      stats.NewLimiter(int(cf.Maxconn)),
 		TraceFamily:  "server." + backendName + "." + cf.Address,
 	}
 	//TODO: insert limiters here

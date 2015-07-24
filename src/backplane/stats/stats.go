@@ -80,6 +80,7 @@ func (s *CountersCollectingHandler) ServeHTTP(w http.ResponseWriter, req *http.R
 type CountersCollectingRoundTripper struct {
 	http.RoundTripper
 	RateLimiter *EMARateLimiter
+	Limiter     Limiter
 	TraceFamily string
 	stats       Counters
 }
