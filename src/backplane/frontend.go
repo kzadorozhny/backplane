@@ -62,9 +62,13 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	tr := trace.New("frontend."+f.Cf.BindHttp, req.RequestURI)
 	defer tr.Finish()
 	log := &requestlog.Item{}
-	ctx := &RequestContext{Log: log, Tr: tr}
-	NewRequestContext(req, ctx)
-	resp := StatsCollectingResponseWriter{ResponseWriter: w, ServerName: f.Cf.ServerString}
+	ctx := RequestContext{Log: log, Tr: tr}
+	NewRequestContext(req, &ctx)
+	resp := StatsCollectingResponseWriter{
+		ResponseWriter: w,
+		ServerName:     f.Cf.ServerString,
+		ctx:            &ctx,
+	}
 	host, _, err := net.SplitHostPort(req.RemoteAddr)
 	if err == nil {
 		log.ClientIp = host

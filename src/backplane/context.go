@@ -25,7 +25,7 @@ func NewRequestContext(r *http.Request, ctx *RequestContext) *RequestContext {
 	return ctx
 }
 
-// GetRequestLog returns a value for request log associated with http request
+// GetRequestContext returns a pointer to context associated with http request
 func GetRequestContext(r *http.Request) (ctx *RequestContext) {
 	if rv := context.Get(r, &mykey); rv != nil {
 		return rv.(*RequestContext)
