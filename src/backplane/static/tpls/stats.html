@@ -86,22 +86,12 @@
 			<td align="left" nowrap width="1%">
 				<br> <b>pid =</b>
 				{{.Pid}}
-				<br> <b>uptime =</b>
-				17d 8h47m24s
+				<br> <b>uptime =</b>{{.Uptime}}
 				<br>
 				<b>system limits:</b>
-				memmax = unlimited; ulimit-n = 8208
-				<br>
-				<b>maxsock =</b>
-				8208;
-				<b>maxconn =</b>
-				4096;
-				<b>maxpipes =</b>
-				0
+				mem = {{.LimitAs.Cur}}; file descriptors = {{.LimitNofile.Cur}}
 				<br>
 				current conns = 1; current pipes = 0/0; conn rate = 2/sec
-				<br>
-				Running tasks: 1/11; idle = 56 %
 				<br></td>
 		</tr>
 	</table>

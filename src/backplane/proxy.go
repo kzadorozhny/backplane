@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"syscall"
 	"time"
 
 	"golang.org/x/net/trace"
@@ -86,6 +87,12 @@ func StatsTemplate() *template.Template {
 	return statstpl
 }
 
+var starttime time.Time
+
+func init() {
+	starttime = time.Now()
+}
+
 func (bp *Backplane) handleStats(w http.ResponseWriter, req *http.Request) {
 	tr := trace.New("backend.internalstats", req.RequestURI)
 	defer tr.Finish()
@@ -95,16 +102,23 @@ func (bp *Backplane) handleStats(w http.ResponseWriter, req *http.Request) {
 		tr.LazyPrintf("Unable to obtain hostname: ", err)
 	}
 	var data = struct {
-		Backends  []*Backend
-		Frontends []*Frontend
-		Pid       int
-		Hostname  string
+		Backends                         []*Backend
+		Frontends                        []*Frontend
+		Pid                              int
+		Hostname                         string
+		Uptime                           time.Duration
+		LimitAs, LimitFsize, LimitNofile syscall.Rlimit
 	}{
-		bp.Backends,
-		bp.Frontends,
-		os.Getpid(),
-		hostname,
+		Backends:  bp.Backends,
+		Frontends: bp.Frontends,
+		Pid:       os.Getpid(),
+		Hostname:  hostname,
+		Uptime:    time.Since(starttime),
 	}
+	syscall.Getrlimit(syscall.RLIMIT_AS, &data.LimitAs)
+	syscall.Getrlimit(syscall.RLIMIT_FSIZE, &data.LimitFsize)
+	syscall.Getrlimit(syscall.RLIMIT_NOFILE, &data.LimitNofile)
+
 	err = StatsTemplate().Execute(w, &data)
 	if err != nil {
 		glog.Errorf("unable to execute template: %s", err)
