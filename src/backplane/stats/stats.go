@@ -55,7 +55,7 @@ func (s *Counters) out() {
 
 type CountersCollectingHandler struct {
 	Handler     http.Handler
-	RateLimiter *EMARateLimiter
+	RateLimiter RateLimiter
 	//TraceFamily string
 	stats Counters
 }
@@ -79,7 +79,7 @@ func (s *CountersCollectingHandler) ServeHTTP(w http.ResponseWriter, req *http.R
 
 type CountersCollectingRoundTripper struct {
 	http.RoundTripper
-	RateLimiter *EMARateLimiter
+	RateLimiter RateLimiter
 	Limiter     Limiter
 	TraceFamily string
 	stats       Counters

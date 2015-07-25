@@ -21,7 +21,7 @@ type StoppableListener struct {
 	stop        chan int //Channel used only to indicate listener should shutdown. listener will close it after the shutdown
 	AcceptedCnt int64
 	ActiveCnt   int64
-	RateLimiter *stats.EMARateLimiter
+	RateLimiter stats.RateLimiter
 	Limiter     stats.Limiter
 }
 
@@ -34,7 +34,7 @@ func NewStoppableListener(l *net.TCPListener, maxrate float64, maxallowed int64)
 		make(chan int),
 		0,
 		0,
-		stats.NewEMARateLimiter(maxrate),
+		stats.NewRateLimiter(maxrate),
 		stats.NewLimiter(int(maxallowed)),
 	}
 }

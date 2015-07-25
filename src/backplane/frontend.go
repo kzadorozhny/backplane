@@ -28,14 +28,14 @@ type HandlersMap func(name string) http.Handler
 type Vhost struct {
 	Cf *config.HttpFrontendVhost
 	stats.Counting
-	RateLimiter *stats.EMARateLimiter
+	RateLimiter stats.RateLimiter
 	Routes      []*Route
 }
 
 type Route struct {
 	Cf *config.HttpHandler
 	stats.Counting
-	RateLimiter *stats.EMARateLimiter
+	RateLimiter stats.RateLimiter
 }
 
 type Frontend struct {
@@ -46,7 +46,7 @@ type Frontend struct {
 	tlsListener net.Listener
 	//for stats display only
 	stats.Counting
-	RateLimiter *stats.EMARateLimiter
+	RateLimiter stats.RateLimiter
 	Vhosts      []*Vhost
 	tlsconf     *tls.Config
 }
@@ -108,7 +108,7 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, error) {
 	var err error
 	hs := &HostSwitch{handlers: make(map[string]http.Handler)}
-	chs := &stats.CountersCollectingHandler{Handler: hs, RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT)}
+	chs := &stats.CountersCollectingHandler{Handler: hs, RateLimiter: stats.NewRateLimiter(FIXME_RATE_LIMIT)}
 	f := &Frontend{Cf: cf, Handler: chs, Counting: chs, RateLimiter: chs.RateLimiter}
 
 	if cf.BindHttp == "" {
@@ -118,7 +118,7 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 		vhost := &Vhost{Cf: vh}
 		f.Vhosts = append(f.Vhosts, vhost)
 		mux := http.NewServeMux()
-		cmux := &stats.CountersCollectingHandler{Handler: mux, RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT)}
+		cmux := &stats.CountersCollectingHandler{Handler: mux, RateLimiter: stats.NewRateLimiter(FIXME_RATE_LIMIT)}
 		vhost.Counting = cmux
 		vhost.RateLimiter = cmux.RateLimiter
 		if vh.Default {
@@ -141,7 +141,7 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 					return nil, err
 				}
 			}
-			ch := &stats.CountersCollectingHandler{Handler: h, RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT)}
+			ch := &stats.CountersCollectingHandler{Handler: h, RateLimiter: stats.NewRateLimiter(FIXME_RATE_LIMIT)}
 			mux.Handle(hc.Path, ch)
 			r := &Route{Cf: hc, Counting: ch, RateLimiter: ch.RateLimiter}
 			vhost.Routes = append(vhost.Routes, r)

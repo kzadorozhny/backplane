@@ -5,31 +5,53 @@ import (
 	"time"
 )
 
-const wq = 0.05
-const nanosInSeconds = float64(time.Second)
-const iNanosInSeconds = int64(time.Second)
+type RateLimiter interface {
+	// Accepted checks if query at this moment should be accepted or rejected.
+	// If accepted, the internal state of the limiter is updated to reflect the accepted counter/current QPS
+	Accepted() bool
 
-// EMARateLimiter is a rate limiter used EMA of momentary rate.
-// The query is rejected if EMA of the rate would go above the configured
-// limit if the query is accepted
-type EMARateLimiter struct {
-	timeOfLastRequest                           int64
-	avgWaitingNs                                int64
-	minWaitingNs                                int64
-	targetQPS                                   float64 //final
-	targetWaitingNs                             int64   //final
-	requestThrottledCount, requestAcceptedCount int64
+	TargetQPS() int64
+
+	// MaxQPS returns max achieved EMA(QPS) since the rate limiter created
+	MaxQPS() int64
+
+	// TotalAcceptedCount returs total number of accepted queries over the
+	// limiter lifetime
+	TotalAcceptedCount() int64
+
+	// TotalRejectedCount returs total number of rejected queries over the
+	// limiter lifetime
+	TotalRejectedCount() int64
+
+	// CurrentQPS returns current EMA of QPS
+	CurrentQPS() int64
 }
 
-//NewEMARateLimiter constructs a new EMA rate limiter with specified EMA cutoff
-func NewEMARateLimiter(maxQPS float64) *EMARateLimiter {
-	return &EMARateLimiter{
+//NewRateLimiter constructs a new EMA rate limiter with specified EMA cutoff
+func NewRateLimiter(maxQPS float64) RateLimiter {
+	return &emaRateLimiter{
 		timeOfLastRequest: time.Now().UnixNano(),
 		avgWaitingNs:      1000000000000,
 		minWaitingNs:      1000000000000,
 		targetQPS:         maxQPS,
 		targetWaitingNs:   int64(nanosInSeconds / maxQPS),
 	}
+}
+
+const wq = 0.05
+const nanosInSeconds = float64(time.Second)
+const iNanosInSeconds = int64(time.Second)
+
+// emaRateLimiter is a rate limiter used EMA of momentary rate.
+// The query is rejected if EMA of the rate would go above the configured
+// limit if the query is accepted
+type emaRateLimiter struct {
+	timeOfLastRequest                           int64
+	avgWaitingNs                                int64
+	minWaitingNs                                int64
+	targetQPS                                   float64 //final
+	targetWaitingNs                             int64   //final
+	requestThrottledCount, requestAcceptedCount int64
 }
 
 /*
@@ -45,7 +67,7 @@ less than target req weight we drop the request
 
 // Accepted checks if query at this moment should be accepted or rejected.
 // If accepted, the EMA rate limiter updates its current EMA
-func (e *EMARateLimiter) Accepted() bool {
+func (e *emaRateLimiter) Accepted() bool {
 	now := time.Now().UnixNano()
 	instWaiting := now - e.timeOfLastRequest
 	for {
@@ -76,28 +98,28 @@ func (e *EMARateLimiter) Accepted() bool {
 }
 
 // TargetQPS returns configured EMA cutoff rate
-func (e *EMARateLimiter) TargetQPS() int64 {
+func (e *emaRateLimiter) TargetQPS() int64 {
 	return iNanosInSeconds / e.targetWaitingNs
 }
 
 // MaxQPS returns max achieved EMA(QPS) since the rate limiter created
-func (e *EMARateLimiter) MaxQPS() int64 {
+func (e *emaRateLimiter) MaxQPS() int64 {
 	return iNanosInSeconds / e.minWaitingNs
 }
 
 // TotalAcceptedCount returs total number of accepted queries over the
 // limiter lifetime
-func (e *EMARateLimiter) TotalAcceptedCount() int64 {
+func (e *emaRateLimiter) TotalAcceptedCount() int64 {
 	return atomic.LoadInt64(&e.requestAcceptedCount)
 }
 
 // TotalRejectedCount returs total number of rejected queries over the
 // limiter lifetime
-func (e *EMARateLimiter) TotalRejectedCount() int64 {
+func (e *emaRateLimiter) TotalRejectedCount() int64 {
 	return atomic.LoadInt64(&e.requestThrottledCount)
 }
 
 // CurrentQPS returns current EMA of QPS
-func (e *EMARateLimiter) CurrentQPS() int64 {
+func (e *emaRateLimiter) CurrentQPS() int64 {
 	return iNanosInSeconds / atomic.LoadInt64(&e.avgWaitingNs)
 }

@@ -36,7 +36,7 @@ type Backend struct {
 	proxy    http.Handler
 	balancer *Balancer
 	stats.Counting
-	RateLimiter *stats.EMARateLimiter
+	RateLimiter stats.RateLimiter
 	Servers     []*Server
 }
 
@@ -72,7 +72,7 @@ func NewBackend(cf *config.HttpBackend) (*Backend, error) {
 	}
 	ch := &stats.CountersCollectingHandler{
 		Handler:     proxy,
-		RateLimiter: stats.NewEMARateLimiter(FIXME_RATE_LIMIT),
+		RateLimiter: stats.NewRateLimiter(FIXME_RATE_LIMIT),
 	}
 	b := &Backend{
 		Cf:          cf,
@@ -154,7 +154,7 @@ type Server struct {
 	//TODO: consider optimizing other places by preconverting interfaces?
 	http.RoundTripper
 	stats.Counting
-	RateLimiter *stats.EMARateLimiter
+	RateLimiter stats.RateLimiter
 	HealthChecker
 }
 
@@ -162,7 +162,7 @@ func NewServer(backendName string, cf *config.Server, onStateUpdate func()) *Ser
 	t := transportForBackend(cf.Address)
 	ct := &stats.CountersCollectingRoundTripper{
 		RoundTripper: t,
-		RateLimiter:  stats.NewEMARateLimiter(cf.Maxrate),
+		RateLimiter:  stats.NewRateLimiter(cf.Maxrate),
 		Limiter:      stats.NewLimiter(int(cf.Maxconn)),
 		TraceFamily:  "server." + backendName + "." + cf.Address,
 	}
