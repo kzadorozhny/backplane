@@ -22,8 +22,6 @@ import (
 	"github.com/golang/glog"
 )
 
-const FIXME_RATE_LIMIT = 100000
-
 type HandlersMap func(name string) http.Handler
 
 type Vhost struct {
