@@ -18,9 +18,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
+	"github.com/apesternikov/backplane/src/context"
 
-	"github.com/gorilla/context"
+	"github.com/golang/glog"
 )
 
 // onExitFlushLoop is a callback set by tests to detect the state of the
@@ -132,7 +132,7 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	outreq := new(http.Request)
 	*outreq = *req // includes shallow copies of maps, but okay
-	LinkContext(req, outreq)
+	context.LinkContext(req, outreq)
 	defer context.Clear(outreq)
 
 	if closeNotifier, ok := rw.(http.CloseNotifier); ok {
@@ -199,7 +199,7 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	res, err := transport.RoundTrip(outreq)
 	if err != nil {
 		glog.Infof("http: proxy error: %v", err)
-		ctx := GetRequestContext(req)
+		ctx := context.GetRequestContext(req)
 		if ctx != nil && ctx.Tr != nil {
 			ctx.Tr.LazyPrintf("http: proxy error: %v", err)
 		}

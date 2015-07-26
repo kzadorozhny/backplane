@@ -1,4 +1,4 @@
-package backplane
+package context
 
 import (
 	"errors"
@@ -41,4 +41,8 @@ func LinkContext(from, to *http.Request) error {
 		return nil
 	}
 	return NoSuchContext
+}
+
+func Clear(r *http.Request) {
+	context.Clear(r)
 }

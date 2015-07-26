@@ -1,6 +1,10 @@
 package backplane
 
-import "net/http"
+import (
+	"github.com/apesternikov/backplane/src/context"
+
+	"net/http"
+)
 
 //http.ResponseWriter implementation that collects status code and response size, as well as updating
 //response headers
@@ -10,7 +14,7 @@ type StatsCollectingResponseWriter struct {
 	ServerName   string
 	ResponseCode int
 	ResponseSize int
-	ctx          *RequestContext
+	ctx          *context.RequestContext
 }
 
 func (s *StatsCollectingResponseWriter) Write(data []byte) (int, error) {

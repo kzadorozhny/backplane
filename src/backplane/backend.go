@@ -9,6 +9,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/apesternikov/backplane/src/context"
+
 	"github.com/apesternikov/backplane/src/backplane/stats"
 	"github.com/apesternikov/backplane/src/config"
 	"github.com/golang/glog"
@@ -46,7 +48,7 @@ func (b *Backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer tr.Finish()
 
 	glog.V(3).Infof("Backend %s serving %s %s", b.Cf.Name, r.Host)
-	ctx := GetRequestContext(r)
+	ctx := context.GetRequestContext(r)
 	ctx.Log.BackendName = b.Cf.Name
 	ctx.Tr.LazyPrintf("using backend %s", b.Cf.Name)
 	defer ctx.Tr.LazyPrintf("backend done")
@@ -113,7 +115,7 @@ func (b *Balancer) rebuildActive() {
 var NoHealthyBackendAvailable = errors.New("No healthy backend server available")
 
 func (b *Balancer) RoundTrip(r *http.Request) (*http.Response, error) {
-	ctx := GetRequestContext(r)
+	ctx := context.GetRequestContext(r)
 	tr := ctx.Tr
 	starttime := time.Now().UnixNano()
 	tr.LazyPrintf("balancer")

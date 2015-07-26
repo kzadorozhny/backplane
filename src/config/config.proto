@@ -17,6 +17,8 @@ message http_handler {
 	string path = 1;
 	string backend_name = 2;	
 	auth auth = 3;
+	int64 maxconn = 4; //max simultaneous requests in flight
+	double maxrate = 5; //max request rate (QPS)
 }
 
 message http_frontend {
@@ -24,6 +26,8 @@ message http_frontend {
 		bool default = 1; //this vhost is default
 		repeated string domain = 2;
 		repeated http_handler handler = 3;
+		int64 maxconn = 4; //max simultaneous requests in flight
+		double maxrate = 5; //max request rate (QPS)
 	}
 	string name = 1; 			//required
 	string bind_http = 2; 	// required

@@ -29,6 +29,9 @@ type RateLimiter interface {
 
 //NewRateLimiter constructs a new EMA rate limiter with specified EMA cutoff
 func NewRateLimiter(maxQPS float64) RateLimiter {
+	if maxQPS < 0.1 {
+		maxQPS = 100000
+	}
 	return &emaRateLimiter{
 		timeOfLastRequest: time.Now().UnixNano(),
 		avgWaitingNs:      1000000000000,

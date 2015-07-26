@@ -56,9 +56,11 @@ func (m *AuthHttpBasicT) GetUserpass() map[string]string {
 
 type HttpHandler struct {
 	// path matching rules are explained here http://golang.org/pkg/net/http/#ServeMux
-	Path        string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
-	BackendName string `protobuf:"bytes,2,opt,name=backend_name" json:"backend_name,omitempty"`
-	Auth        *Auth  `protobuf:"bytes,3,opt,name=auth" json:"auth,omitempty"`
+	Path        string  `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
+	BackendName string  `protobuf:"bytes,2,opt,name=backend_name" json:"backend_name,omitempty"`
+	Auth        *Auth   `protobuf:"bytes,3,opt,name=auth" json:"auth,omitempty"`
+	Maxconn     int64   `protobuf:"varint,4,opt,name=maxconn" json:"maxconn,omitempty"`
+	Maxrate     float64 `protobuf:"fixed64,5,opt,name=maxrate" json:"maxrate,omitempty"`
 }
 
 func (m *HttpHandler) Reset()         { *m = HttpHandler{} }
@@ -102,6 +104,8 @@ type HttpFrontendVhost struct {
 	Default bool           `protobuf:"varint,1,opt,name=default" json:"default,omitempty"`
 	Domain  []string       `protobuf:"bytes,2,rep,name=domain" json:"domain,omitempty"`
 	Handler []*HttpHandler `protobuf:"bytes,3,rep,name=handler" json:"handler,omitempty"`
+	Maxconn int64          `protobuf:"varint,4,opt,name=maxconn" json:"maxconn,omitempty"`
+	Maxrate float64        `protobuf:"fixed64,5,opt,name=maxrate" json:"maxrate,omitempty"`
 }
 
 func (m *HttpFrontendVhost) Reset()         { *m = HttpFrontendVhost{} }

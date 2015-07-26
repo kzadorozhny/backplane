@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apesternikov/backplane/src/context"
+
 	"github.com/apesternikov/backplane/src/requestlog"
 
 	"golang.org/x/net/trace"
@@ -18,7 +20,6 @@ import (
 
 	"github.com/apesternikov/backplane/src/config"
 	"github.com/golang/glog"
-	"github.com/gorilla/context"
 )
 
 const FIXME_RATE_LIMIT = 100000
@@ -62,8 +63,8 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	tr := trace.New("frontend."+f.Cf.BindHttp, req.RequestURI)
 	defer tr.Finish()
 	log := &requestlog.Item{}
-	ctx := RequestContext{Log: log, Tr: tr}
-	NewRequestContext(req, &ctx)
+	ctx := context.RequestContext{Log: log, Tr: tr}
+	context.NewRequestContext(req, &ctx)
 	resp := StatsCollectingResponseWriter{
 		ResponseWriter: w,
 		ServerName:     f.Cf.ServerString,
@@ -118,7 +119,11 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 		vhost := &Vhost{Cf: vh}
 		f.Vhosts = append(f.Vhosts, vhost)
 		mux := http.NewServeMux()
-		cmux := &stats.CountersCollectingHandler{Handler: mux, RateLimiter: stats.NewRateLimiter(FIXME_RATE_LIMIT)}
+		cmux := &stats.CountersCollectingHandler{
+			Handler:     mux,
+			RateLimiter: stats.NewRateLimiter(vh.Maxrate),
+			Limiter:     stats.NewLimiter(int(vh.Maxconn)),
+		}
 		vhost.Counting = cmux
 		vhost.RateLimiter = cmux.RateLimiter
 		if vh.Default {
@@ -141,7 +146,11 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 					return nil, err
 				}
 			}
-			ch := &stats.CountersCollectingHandler{Handler: h, RateLimiter: stats.NewRateLimiter(FIXME_RATE_LIMIT)}
+			ch := &stats.CountersCollectingHandler{
+				Handler:     h,
+				RateLimiter: stats.NewRateLimiter(hc.Maxrate),
+				Limiter:     stats.NewLimiter(int(hc.Maxconn)),
+			}
 			mux.Handle(hc.Path, ch)
 			r := &Route{Cf: hc, Counting: ch, RateLimiter: ch.RateLimiter}
 			vhost.Routes = append(vhost.Routes, r)

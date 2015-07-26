@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"sync/atomic"
 
+	"github.com/apesternikov/backplane/src/context"
+
 	"golang.org/x/net/trace"
 )
 
@@ -56,6 +58,7 @@ func (s *Counters) out() {
 type CountersCollectingHandler struct {
 	Handler     http.Handler
 	RateLimiter RateLimiter
+	Limiter     Limiter
 	//TraceFamily string
 	stats Counters
 }
@@ -71,10 +74,14 @@ func (s *CountersCollectingHandler) ServeHTTP(w http.ResponseWriter, req *http.R
 			return
 		}
 	}
+	if s.Limiter != nil {
+		ctx := context.GetRequestContext(req)
+		s.Limiter.Acquire(ctx.Tr)
+		defer s.Limiter.Release(ctx.Tr)
+	}
 	s.stats.in()
 	s.Handler.ServeHTTP(w, req)
 	s.stats.out()
-	// glog.V(3).Infof("handler %s out", req.RequestURI)
 }
 
 type CountersCollectingRoundTripper struct {
