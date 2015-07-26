@@ -5,9 +5,13 @@ package stats
 import "golang.org/x/net/trace"
 
 type Limiter interface {
+	// Acquire allocation from the limiter. this call must be accompanied by Release(tr)
 	Acquire(tr trace.Trace)
+	// Release allocation
 	Release(tr trace.Trace)
+	// Get current number of allocations acquired.
 	Size() int
+	// Get configured limit. 0 is unlimited
 	Limit() int
 }
 

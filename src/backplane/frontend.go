@@ -30,6 +30,7 @@ type Vhost struct {
 	Cf *config.HttpFrontendVhost
 	stats.Counting
 	RateLimiter stats.RateLimiter
+	Limiter     stats.Limiter
 	Routes      []*Route
 }
 
@@ -37,6 +38,7 @@ type Route struct {
 	Cf *config.HttpHandler
 	stats.Counting
 	RateLimiter stats.RateLimiter
+	Limiter     stats.Limiter
 }
 
 type Frontend struct {
@@ -129,6 +131,7 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 		}
 		vhost.Counting = cmux
 		vhost.RateLimiter = cmux.RateLimiter
+		vhost.Limiter = cmux.Limiter
 		if vh.Default {
 			if hs.defaultHandler != nil {
 				return nil, fmt.Errorf("frontend %s host %d: default is already defined", cf.Name, i+1)
@@ -155,7 +158,7 @@ func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, erro
 				Limiter:     stats.NewLimiter(int(hc.Maxconn)),
 			}
 			mux.Handle(hc.Path, ch)
-			r := &Route{Cf: hc, Counting: ch, RateLimiter: ch.RateLimiter}
+			r := &Route{Cf: hc, Counting: ch, RateLimiter: ch.RateLimiter, Limiter: ch.Limiter}
 			vhost.Routes = append(vhost.Routes, r)
 		}
 	}

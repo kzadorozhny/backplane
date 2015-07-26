@@ -188,7 +188,7 @@
 			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
 			<td>{{ $cnt.CurActiveSessions }}</td>
 			<td>{{ $cnt.MaxActiveSessions }}</td>
-			<td>limitgoeshereXXXX</td>
+			<td>{{ if eq .Limiter.Limit 0 }}∞{{ else }}{{ .Limiter.Limit }}{{ end }}</td>
 			<td>
 				<u>
 					{{ $cnt.TotalSessions }}
@@ -269,10 +269,10 @@
 			</td>
 			<td></td>
 			<td>
-				XXXX
+				bytes inXXXX
 			</td>
 			<td>
-				XXXX
+				bytes out XXXX
 				<div class=tips>compression: in=0 out=0 bypassed=0 savings=0%</div>
 			</td>
 			<td>XXX</td>
@@ -300,9 +300,7 @@
 			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
 			<td>{{ $cnt.CurActiveSessions }}</td>
 			<td>{{ $cnt.MaxActiveSessions }}</td>
-			<td>
-				XXXX
-			</td>
+			<td>{{ if eq .Limiter.Limit 0 }}∞{{ else }}{{ .Limiter.Limit }}{{ end }}</td>
 			<td>
 				<u>
 					{{ $cnt.TotalSessions }}
