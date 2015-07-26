@@ -74,7 +74,8 @@ func NewBackend(cf *config.HttpBackend) (*Backend, error) {
 	}
 	ch := &stats.CountersCollectingHandler{
 		Handler:     proxy,
-		RateLimiter: stats.NewRateLimiter(FIXME_RATE_LIMIT),
+		RateLimiter: stats.NewRateLimiter(cf.Maxrate),
+		Limiter:     stats.NewLimiter(int(cf.Maxconn)),
 	}
 	b := &Backend{
 		Cf:          cf,

@@ -24,6 +24,8 @@ import (
 
 type HandlersMap func(name string) http.Handler
 
+var FIXME_RATE_LIMIT = 1000000.
+
 type Vhost struct {
 	Cf *config.HttpFrontendVhost
 	stats.Counting
@@ -107,7 +109,10 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func NewFrontend(cf *config.HttpFrontend, backends HandlersMap) (*Frontend, error) {
 	var err error
 	hs := &HostSwitch{handlers: make(map[string]http.Handler)}
-	chs := &stats.CountersCollectingHandler{Handler: hs, RateLimiter: stats.NewRateLimiter(FIXME_RATE_LIMIT)}
+	chs := &stats.CountersCollectingHandler{
+		Handler:     hs,
+		RateLimiter: stats.NewRateLimiter(FIXME_RATE_LIMIT),
+	}
 	f := &Frontend{Cf: cf, Handler: chs, Counting: chs, RateLimiter: chs.RateLimiter}
 
 	if cf.BindHttp == "" {

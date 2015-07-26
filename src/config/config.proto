@@ -53,6 +53,8 @@ message server {
 message http_backend {
 	string name = 1;
 	repeated server server = 2;
+	int64 maxconn = 3; //max simultaneous requests in flight
+	double maxrate = 4; //max request rate (QPS)
 }
 
 message config {

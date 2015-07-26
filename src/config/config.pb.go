@@ -131,8 +131,10 @@ func (m *Server) String() string { return proto.CompactTextString(m) }
 func (*Server) ProtoMessage()    {}
 
 type HttpBackend struct {
-	Name   string    `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Server []*Server `protobuf:"bytes,2,rep,name=server" json:"server,omitempty"`
+	Name    string    `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Server  []*Server `protobuf:"bytes,2,rep,name=server" json:"server,omitempty"`
+	Maxconn int64     `protobuf:"varint,3,opt,name=maxconn" json:"maxconn,omitempty"`
+	Maxrate float64   `protobuf:"fixed64,4,opt,name=maxrate" json:"maxrate,omitempty"`
 }
 
 func (m *HttpBackend) Reset()         { *m = HttpBackend{} }
