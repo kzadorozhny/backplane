@@ -18,11 +18,12 @@ import (
 
 type StoppableListener struct {
 	*net.TCPListener
-	stop        chan int //Channel used only to indicate listener should shutdown. listener will close it after the shutdown
-	AcceptedCnt int64
-	ActiveCnt   int64
-	RateLimiter stats.RateLimiter
-	Limiter     stats.Limiter
+	stop              chan int //Channel used only to indicate listener should shutdown. listener will close it after the shutdown
+	AcceptedCnt       int64
+	ActiveCnt         int64
+	RateLimiter       stats.RateLimiter
+	Limiter           stats.Limiter
+	BytesIn, BytesOut int64
 }
 
 func NewStoppableListener(l *net.TCPListener, maxrate float64, maxallowed int64) *StoppableListener {
@@ -30,12 +31,10 @@ func NewStoppableListener(l *net.TCPListener, maxrate float64, maxallowed int64)
 		maxrate = 999999
 	}
 	return &StoppableListener{
-		l,
-		make(chan int),
-		0,
-		0,
-		stats.NewRateLimiter(maxrate),
-		stats.NewLimiter(int(maxallowed)),
+		TCPListener: l,
+		stop:        make(chan int),
+		RateLimiter: stats.NewRateLimiter(maxrate),
+		Limiter:     stats.NewLimiter(int(maxallowed)),
 	}
 }
 
@@ -54,6 +53,21 @@ func (c *conn) Close() error {
 		atomic.AddInt64(&c.parent.ActiveCnt, -1)
 	}
 	return c.Conn.Close()
+}
+
+func (c *conn) Read(b []byte) (n int, err error) {
+	n, err = c.Conn.Read(b)
+	if err == nil {
+		atomic.AddInt64(&c.parent.BytesIn, int64(n))
+	}
+	return
+}
+func (c *conn) Write(b []byte) (n int, err error) {
+	n, err = c.Conn.Write(b)
+	if err == nil {
+		atomic.AddInt64(&c.parent.BytesOut, int64(n))
+	}
+	return
 }
 
 func (sl *StoppableListener) Accept() (net.Conn, error) {

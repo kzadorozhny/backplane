@@ -116,6 +116,8 @@
 			<th>Sessions RL Dropped</th>
 			<th>Active Sessions</th>
 			<th>Totoal Sessions</th>
+			<th>Bytes In</th>
+			<th>Bytes Out</th>
 		</tr>
 		{{ if .Cf.BindHttp }}
 		<tr class="active4">
@@ -127,6 +129,8 @@
 			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
 			<td>{{ .ActiveCnt }}</td>
 			<td>{{ .AcceptedCnt }}</td>
+			<td>{{ .BytesIn }}</td>
+			<td>{{ .BytesOut }}</td>
 			{{ end }}
 		</tr>
 		{{ end }}
@@ -140,6 +144,8 @@
 			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
 			<td>{{ .ActiveCnt }}</td>
 			<td>{{ .AcceptedCnt }}</td>
+			<td>{{ .BytesIn }}</td>
+			<td>{{ .BytesOut }}</td>
 			{{ end }}
 		</tr>
 		{{ end }}
