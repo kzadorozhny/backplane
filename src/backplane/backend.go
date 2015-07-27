@@ -54,7 +54,7 @@ func (b *Backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer ctx.Tr.LazyPrintf("backend done")
 
 	b.proxy.ServeHTTP(w, r)
-	if wr, ok := w.(*StatsCollectingResponseWriter); ok {
+	if wr, ok := w.(*stats.StatsCollectingResponseWriter); ok {
 		tr.LazyPrintf("Response %d", wr.ResponseCode)
 		tr.LazyPrintf("Response headers %v", wr.Header())
 		if wr.IsErrorResponse() {

@@ -1,4 +1,4 @@
-package backplane
+package stats
 
 import (
 	"github.com/apesternikov/backplane/src/context"
@@ -14,7 +14,7 @@ type StatsCollectingResponseWriter struct {
 	ServerName   string
 	ResponseCode int
 	ResponseSize int
-	ctx          *context.RequestContext
+	Ctx          *context.RequestContext
 }
 
 func (s *StatsCollectingResponseWriter) Write(data []byte) (int, error) {

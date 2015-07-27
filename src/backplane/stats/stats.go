@@ -24,15 +24,24 @@ type Counting interface {
 type Counters struct {
 	CurActiveSessions, MaxActiveSessions int64
 	TotalSessions                        int64
+	CountersByResponseCode               [6]int64 // 200 -> 2, 304 -> 3, 410 -> 4, 500->5
 }
 
 // return values from stats without locking.
-// information could be inconsistent due to race conditions so it sould be used for informational purposes only
+// information could be inconsistent due to race conditions so it should be used for informational purposes only
 func (s *Counters) atomicCopy() Counters {
 	return Counters{
 		CurActiveSessions: atomic.LoadInt64(&s.CurActiveSessions),
 		MaxActiveSessions: atomic.LoadInt64(&s.MaxActiveSessions),
 		TotalSessions:     atomic.LoadInt64(&s.TotalSessions),
+		CountersByResponseCode: [6]int64{
+			atomic.LoadInt64(&s.CountersByResponseCode[0]),
+			atomic.LoadInt64(&s.CountersByResponseCode[1]),
+			atomic.LoadInt64(&s.CountersByResponseCode[2]),
+			atomic.LoadInt64(&s.CountersByResponseCode[3]),
+			atomic.LoadInt64(&s.CountersByResponseCode[4]),
+			atomic.LoadInt64(&s.CountersByResponseCode[5]),
+		},
 	}
 }
 
@@ -82,6 +91,15 @@ func (s *CountersCollectingHandler) ServeHTTP(w http.ResponseWriter, req *http.R
 	s.stats.in()
 	s.Handler.ServeHTTP(w, req)
 	s.stats.out()
+	if wr, ok := w.(*StatsCollectingResponseWriter); ok {
+		respBucket := wr.ResponseCode / 100
+		if respBucket == 0 {
+			respBucket = 2
+		}
+		if respBucket > 0 && respBucket <= 5 {
+			atomic.AddInt64(&s.stats.CountersByResponseCode[respBucket], 1)
+		}
+	}
 }
 
 type CountersCollectingRoundTripper struct {
@@ -112,6 +130,15 @@ func (s *CountersCollectingRoundTripper) RoundTrip(r *http.Request) (*http.Respo
 	s.stats.in()
 	resp, err := s.RoundTripper.RoundTrip(r)
 	s.stats.out()
+	if resp != nil && err == nil {
+		respBucket := resp.StatusCode / 100
+		if respBucket == 0 {
+			respBucket = 2
+		}
+		if respBucket > 0 && respBucket <= 5 {
+			atomic.AddInt64(&s.stats.CountersByResponseCode[respBucket], 1)
+		}
+	}
 	if err != nil {
 		tr.LazyPrintf("Error in roundtripper: %s", err)
 		tr.SetError()

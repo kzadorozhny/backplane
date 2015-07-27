@@ -201,73 +201,32 @@
 					<div class=tips>
 						<table class=det>
 							<tr>
-								<th>Cum. connections:</th>
-								<td>
-									52
-									<span class="rls">0</span>
-									064
-								</td>
-							</tr>
-							<tr>
-								<th>Cum. sessions:</th>
-								<td>
-									51
-									<span class="rls">9</span>
-									906
-								</td>
-							</tr>
-							<tr>
 								<th>Cum. HTTP requests:</th>
-								<td>
-									58
-									<span class="rls">3</span>
-									472
-								</td>
+								<td>{{ $cnt.TotalSessions }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 1xx responses:</th>
-								<td>0</td>
+								<td>{{ index $cnt.CountersByResponseCode 1 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 2xx responses:</th>
-								<td>
-									28
-									<span class="rls">1</span>
-									877
-								</td>
-							</tr>
-							<tr>
-								<th>&nbsp;&nbsp;Compressed 2xx:</th>
-								<td>0</td>
-								<td>(0%)</td>
+								<td>{{ index $cnt.CountersByResponseCode 2 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 3xx responses:</th>
-								<td>
-									26
-									<span class="rls">8</span>
-									734
-								</td>
+								<td>{{ index $cnt.CountersByResponseCode 3 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 4xx responses:</th>
-								<td>
-									3
-									<span class="rls">1</span>
-									836
-								</td>
+								<td>{{ index $cnt.CountersByResponseCode 4 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 5xx responses:</th>
-								<td>402</td>
+								<td>{{ index $cnt.CountersByResponseCode 5 }}</td>
 							</tr>
 							<tr>
 								<th>- other responses:</th>
-								<td>622</td>
-							</tr>
-							<tr>
-								<th>Intercepted requests:</th>
-								<td>0</td>
+								<td>{{ index $cnt.CountersByResponseCode 0 }}</td>
 							</tr>
 						</table>
 					</div>
@@ -313,73 +272,32 @@
 					<div class=tips>
 						<table class=det>
 							<tr>
-								<th>Cum. connections:</th>
-								<td>
-									52
-									<span class="rls">0</span>
-									064
-								</td>
-							</tr>
-							<tr>
-								<th>Cum. sessions:</th>
-								<td>
-									51
-									<span class="rls">9</span>
-									906
-								</td>
-							</tr>
-							<tr>
 								<th>Cum. HTTP requests:</th>
-								<td>
-									58
-									<span class="rls">3</span>
-									472
-								</td>
+								<td>{{ $cnt.TotalSessions }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 1xx responses:</th>
-								<td>0</td>
+								<td>{{ index $cnt.CountersByResponseCode 1 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 2xx responses:</th>
-								<td>
-									28
-									<span class="rls">1</span>
-									877
-								</td>
-							</tr>
-							<tr>
-								<th>&nbsp;&nbsp;Compressed 2xx:</th>
-								<td>0</td>
-								<td>(0%)</td>
+								<td>{{ index $cnt.CountersByResponseCode 2 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 3xx responses:</th>
-								<td>
-									26
-									<span class="rls">8</span>
-									734
-								</td>
+								<td>{{ index $cnt.CountersByResponseCode 3 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 4xx responses:</th>
-								<td>
-									3
-									<span class="rls">1</span>
-									836
-								</td>
+								<td>{{ index $cnt.CountersByResponseCode 4 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 5xx responses:</th>
-								<td>402</td>
+								<td>{{ index $cnt.CountersByResponseCode 5 }}</td>
 							</tr>
 							<tr>
 								<th>- other responses:</th>
-								<td>622</td>
-							</tr>
-							<tr>
-								<th>Intercepted requests:</th>
-								<td>0</td>
+								<td>{{ index $cnt.CountersByResponseCode 0 }}</td>
 							</tr>
 						</table>
 					</div>
@@ -427,73 +345,32 @@
 					<div class=tips>
 						<table class=det>
 							<tr>
-								<th>Cum. connections:</th>
-								<td>
-									52
-									<span class="rls">0</span>
-									064
-								</td>
-							</tr>
-							<tr>
-								<th>Cum. sessions:</th>
-								<td>
-									51
-									<span class="rls">9</span>
-									906
-								</td>
-							</tr>
-							<tr>
 								<th>Cum. HTTP requests:</th>
-								<td>
-									58
-									<span class="rls">3</span>
-									472
-								</td>
+								<td>{{ $cnt.TotalSessions }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 1xx responses:</th>
-								<td>0</td>
+								<td>{{ index $cnt.CountersByResponseCode 1 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 2xx responses:</th>
-								<td>
-									28
-									<span class="rls">1</span>
-									877
-								</td>
-							</tr>
-							<tr>
-								<th>&nbsp;&nbsp;Compressed 2xx:</th>
-								<td>0</td>
-								<td>(0%)</td>
+								<td>{{ index $cnt.CountersByResponseCode 2 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 3xx responses:</th>
-								<td>
-									26
-									<span class="rls">8</span>
-									734
-								</td>
+								<td>{{ index $cnt.CountersByResponseCode 3 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 4xx responses:</th>
-								<td>
-									3
-									<span class="rls">1</span>
-									836
-								</td>
+								<td>{{ index $cnt.CountersByResponseCode 4 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 5xx responses:</th>
-								<td>402</td>
+								<td>{{ index $cnt.CountersByResponseCode 5 }}</td>
 							</tr>
 							<tr>
 								<th>- other responses:</th>
-								<td>622</td>
-							</tr>
-							<tr>
-								<th>Intercepted requests:</th>
-								<td>0</td>
+								<td>{{ index $cnt.CountersByResponseCode 0 }}</td>
 							</tr>
 						</table>
 					</div>
@@ -592,87 +469,32 @@
 					<div class=tips>
 						<table class=det>
 							<tr>
-								<th>Cum. sessions:</th>
-								<td>
-									18
-									<span class="rls">0</span>
-									456
-								</td>
-							</tr>
-							<tr>
-								<th>Cum. HTTP responses:</th>
-								<td>
-									18
-									<span class="rls">0</span>
-									200
-								</td>
+								<th>Cum. HTTP requests:</th>
+								<td>{{ $cnt.TotalSessions }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 1xx responses:</th>
-								<td>0</td>
-								<td>(0%)</td>
+								<td>{{ index $cnt.CountersByResponseCode 1 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 2xx responses:</th>
-								<td>
-									8
-									<span class="rls">5</span>
-									642
-								</td>
-								<td>(47%)</td>
+								<td>{{ index $cnt.CountersByResponseCode 2 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 3xx responses:</th>
-								<td>
-									8
-									<span class="rls">6</span>
-									653
-								</td>
-								<td>(48%)</td>
+								<td>{{ index $cnt.CountersByResponseCode 3 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 4xx responses:</th>
-								<td>
-									<span class="rls">7</span>
-									877
-								</td>
-								<td>(4%)</td>
+								<td>{{ index $cnt.CountersByResponseCode 4 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 5xx responses:</th>
-								<td>28</td>
-								<td>(0%)</td>
+								<td>{{ index $cnt.CountersByResponseCode 5 }}</td>
 							</tr>
 							<tr>
 								<th>- other responses:</th>
-								<td>0</td>
-								<td>(0%)</td>
-							</tr>
-							<tr>
-								<th colspan=3>Avg over last 1024 success. conn.</th>
-							</tr>
-							<tr>
-								<th>- Queue time:</th>
-								<td>0</td>
-								<td>ms</td>
-							</tr>
-							<tr>
-								<th>- Connect time:</th>
-								<td>0</td>
-								<td>ms</td>
-							</tr>
-							<tr>
-								<th>- Response time:</th>
-								<td>4</td>
-								<td>ms</td>
-							</tr>
-							<tr>
-								<th>- Total time:</th>
-								<td>
-									<span class="rls">1</span>
-									024
-								</td>
-								<td>ms</td>
+								<td>{{ index $cnt.CountersByResponseCode 0 }}</td>
 							</tr>
 						</table>
 					</div>

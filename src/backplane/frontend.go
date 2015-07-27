@@ -67,10 +67,10 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	log := &requestlog.Item{}
 	ctx := context.RequestContext{Log: log, Tr: tr}
 	context.NewRequestContext(req, &ctx)
-	resp := StatsCollectingResponseWriter{
+	resp := stats.StatsCollectingResponseWriter{
 		ResponseWriter: w,
 		ServerName:     f.Cf.ServerString,
-		ctx:            &ctx,
+		Ctx:            &ctx,
 	}
 	host, _, err := net.SplitHostPort(req.RemoteAddr)
 	if err == nil {
