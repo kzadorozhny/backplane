@@ -123,7 +123,7 @@
 			{{ with .Sln }}
 			<td>{{ .RateLimiter.CurrentQPS }}</td>
 			<td>{{ .RateLimiter.MaxQPS }}</td>
-			<td>{{ .RateLimiter.TargetQPS }}AAA</td>
+			<td>{{ if gt .RateLimiter.TargetQPS 999999 }}∞{{ else }}{{ .RateLimiter.TargetQPS }}{{ end }}</td>
 			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
 			<td>{{ .ActiveCnt }}</td>
 			<td>{{ .AcceptedCnt }}</td>
@@ -138,7 +138,7 @@
 			{{ with .TlsSln }}
 			<td>{{ .RateLimiter.CurrentQPS }}</td>
 			<td>{{ .RateLimiter.MaxQPS }}</td>
-			<td>{{ .RateLimiter.TargetQPS }}</td>
+			<td>{{ if gt .RateLimiter.TargetQPS 999999 }}∞{{ else }}{{ .RateLimiter.TargetQPS }}{{ end }}</td>
 			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
 			<td>{{ .ActiveCnt }}</td>
 			<td>{{ .AcceptedCnt }}</td>
@@ -184,7 +184,7 @@
 			</td>
 			<td>{{ .RateLimiter.CurrentQPS }}</td>
 			<td>{{ .RateLimiter.MaxQPS }}</td>
-			<td>{{ .RateLimiter.TargetQPS }}</td>
+			<td>{{ if gt .RateLimiter.TargetQPS 999999 }}∞{{ else }}{{ .RateLimiter.TargetQPS }}{{ end }}</td>
 			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
 			<td>{{ $cnt.CurActiveSessions }}</td>
 			<td>{{ $cnt.MaxActiveSessions }}</td>
@@ -247,7 +247,7 @@
 			</td>
 			<td>{{ .RateLimiter.CurrentQPS }}</td>
 			<td>{{ .RateLimiter.MaxQPS }}</td>
-			<td>{{ .RateLimiter.TargetQPS }}</td>
+			<td>{{ if gt .RateLimiter.TargetQPS 999999 }}∞{{ else }}{{ .RateLimiter.TargetQPS }}{{ end }}</td>
 			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
 			<td>{{ $cnt.CurActiveSessions }}</td>
 			<td>{{ $cnt.MaxActiveSessions }}</td>
@@ -310,7 +310,7 @@
 			</td>
 			<td>{{ .RateLimiter.CurrentQPS }}</td>
 			<td>{{ .RateLimiter.MaxQPS }}</td>
-			<td>{{ .RateLimiter.TargetQPS }}</td>
+			<td>{{ if gt .RateLimiter.TargetQPS 999999 }}∞{{ else }}{{ .RateLimiter.TargetQPS }}{{ end }}</td>
 			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
 			<td>{{ $cnt.CurActiveSessions }}</td>
 			<td>{{ $cnt.MaxActiveSessions }}</td>
@@ -424,7 +424,7 @@
 
 			<td>{{ .RateLimiter.CurrentQPS }}</td>
 			<td>{{ .RateLimiter.MaxQPS }}</td>
-			<td>{{ .RateLimiter.TargetQPS }}</td>
+			<td>{{ if gt .RateLimiter.TargetQPS 999999 }}∞{{ else }}{{ .RateLimiter.TargetQPS }}{{ end }}</td>
 			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
 
 			<td>{{ $cnt.CurActiveSessions }}</td>
@@ -508,7 +508,7 @@
 			</td>
 			<td>{{ .RateLimiter.CurrentQPS }}</td>
 			<td>{{ .RateLimiter.MaxQPS }}</td>
-			<td>{{ .RateLimiter.TargetQPS }}</td>
+			<td>{{ if gt .RateLimiter.TargetQPS 999999 }}∞{{ else }}{{ .RateLimiter.TargetQPS }}{{ end }}</td>
 			<td>{{ .RateLimiter.TotalRejectedCount }}</td>
 
 			<td>{{ $cnt.CurActiveSessions }}</td>
