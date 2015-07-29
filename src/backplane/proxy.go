@@ -60,7 +60,7 @@ func (bp *Backplane) Configure(cf *config.Config) error {
 }
 
 var funcMap = template.FuncMap{
-	"age": func(t time.Time) time.Duration { return time.Now().Sub(t) },
+	"age": func(t time.Time) time.Duration { return time.Since(t) },
 }
 
 var (

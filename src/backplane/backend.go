@@ -39,6 +39,7 @@ type Backend struct {
 	balancer *Balancer
 	stats.Counting
 	RateLimiter stats.RateLimiter
+	Limiter     stats.Limiter
 	Servers     []*Server
 }
 
@@ -83,6 +84,7 @@ func NewBackend(cf *config.HttpBackend) (*Backend, error) {
 		balancer:    balancer,
 		Counting:    ch,
 		RateLimiter: ch.RateLimiter,
+		Limiter:     ch.Limiter,
 		Servers:     servers,
 	}
 	return b, nil
@@ -158,6 +160,7 @@ type Server struct {
 	http.RoundTripper
 	stats.Counting
 	RateLimiter stats.RateLimiter
+	Limiter     stats.Limiter
 	HealthChecker
 }
 
@@ -179,6 +182,7 @@ func NewServer(backendName string, cf *config.Server, onStateUpdate func()) *Ser
 		RoundTripper:  ct,
 		Counting:      ct,
 		RateLimiter:   ct.RateLimiter,
+		Limiter:       ct.Limiter,
 		HealthChecker: prober,
 	}
 }

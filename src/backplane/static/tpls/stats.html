@@ -90,8 +90,6 @@
 				<br>
 				<b>system limits:</b>
 				mem = {{.LimitAs.Cur}}; file descriptors = {{.LimitNofile.Cur}}
-				<br>
-				current conns = 1; current pipes = 0/0; conn rate = 2/sec
 				<br></td>
 		</tr>
 	</table>
@@ -156,7 +154,6 @@
 			<th rowspan=2 colspan=2></th>
 			<th colspan=4>Request rate</th>
 			<th colspan=5>Requests</th>
-			<th colspan=3>Bytes</th>
 			<th colspan=2>Denied</th>
 			<th colspan=3>Errors</th>
 		</tr>
@@ -170,9 +167,6 @@
 			<th>Limit</th>
 			<th>Total</th>
 			<th>Last</th>
-			<th>In</th>
-			<th>Out</th>
-			<th>Req</th>
 			<th>Resp</th>
 			<th>Req</th>
 			<th>Conn</th>
@@ -232,15 +226,7 @@
 					</div>
 				</u>
 			</td>
-			<td></td>
-			<td>
-				bytes inXXXX
-			</td>
-			<td>
-				bytes out XXXX
-				<div class=tips>compression: in=0 out=0 bypassed=0 savings=0%</div>
-			</td>
-			<td>XXX</td>
+			<td>{{ .RateLimiter.LastPacket | age }}</td>
 			<td>XX</td>
 			<td>
 				XXX
@@ -303,15 +289,7 @@
 					</div>
 				</u>
 			</td>
-			<td></td>
-			<td>
-				XXXX
-			</td>
-			<td>
-				XXXX
-				<div class=tips>compression: in=0 out=0 bypassed=0 savings=0%</div>
-			</td>
-			<td>XXX</td>
+			<td>{{ .RateLimiter.LastPacket | age }}</td>
 			<td>X</td>
 			<td>
 				XXX
@@ -376,16 +354,8 @@
 					</div>
 				</u>
 			</td>
-			<td></td>
-			<td>
-				XXXX
-			</td>
-			<td>
-				XXXX
-				<div class=tips>compression: in=0 out=0 bypassed=0 savings=0%</div>
-			</td>
+			<td>{{ .RateLimiter.LastPacket | age }}</td>
 			<td>XXX</td>
-			<td>7</td>
 			<td>
 				XXX
 			</td>
@@ -412,7 +382,6 @@
 			<th rowspan=2></th>
 			<th colspan=4>Requests rate</th>
 			<th colspan=5>Requests</th>
-			<th colspan=2>Bytes</th>
 			<th colspan=2>Denied</th>
 			<th colspan=3>Errors</th>
 			<th colspan=2>Warnings</th>
@@ -428,8 +397,6 @@
 			<th>Limit</th>
 			<th>Total</th>
 			<th>Last</th>
-			<th>In</th>
-			<th>Out</th>
 			<th>Req</th>
 			<th>Resp</th>
 			<th>Req</th>
@@ -462,7 +429,7 @@
 
 			<td>{{ $cnt.CurActiveSessions }}</td>
 			<td>{{ $cnt.MaxActiveSessions }}</td>
-			<td>X</td>
+			<td>{{ if eq .Limiter.Limit 0 }}∞{{ else }}{{ .Limiter.Limit }}{{ end }}</td>
 			<td>
 				<u>
 					{{ $cnt.TotalSessions }}
@@ -500,13 +467,7 @@
 					</div>
 				</u>
 			</td>
-			<td>9s</td>
-			<td>
-				XXX
-			</td>
-			<td>
-				XXX
-			</td>
+			<td>{{ .RateLimiter.LastPacket | age }}</td>
 			<td></td>
 			<td>3</td>
 			<td></td>
@@ -523,7 +484,6 @@
 			<td class=ac>
 				<u>
 					{{ .HealthChecker.HealthStatus }}
-					<div class=tips>Layer7 check passed: Ok</div>
 				</u>
 			</td>
 			<td class=ac>10</td>
@@ -553,106 +513,45 @@
 
 			<td>{{ $cnt.CurActiveSessions }}</td>
 			<td>{{ $cnt.MaxActiveSessions }}</td>
+			<td>{{ if eq .Limiter.Limit 0 }}∞{{ else }}{{ .Limiter.Limit }}{{ end }}</td>
 			<td>
 				<u>
-					X
+					{{ $cnt.TotalSessions }}
 					<div class=tips>
 						<table class=det>
 							<tr>
-								<th>Cum. sessions:</th>
-								<td>
-									54
-									<span class="rls">1</span>
-									463
-								</td>
-							</tr>
-							<tr>
 								<th>Cum. HTTP requests:</th>
-								<td>
-									54
-									<span class="rls">1</span>
-									463
-								</td>
+								<td>{{ $cnt.TotalSessions }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 1xx responses:</th>
-								<td>0</td>
+								<td>{{ index $cnt.CountersByResponseCode 1 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 2xx responses:</th>
-								<td>
-									25
-									<span class="rls">6</span>
-									270
-								</td>
-							</tr>
-							<tr>
-								<th>&nbsp;&nbsp;Compressed 2xx:</th>
-								<td>0</td>
-								<td>(0%)</td>
+								<td>{{ index $cnt.CountersByResponseCode 2 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 3xx responses:</th>
-								<td>
-									26
-									<span class="rls">0</span>
-									601
-								</td>
+								<td>{{ index $cnt.CountersByResponseCode 3 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 4xx responses:</th>
-								<td>
-									2
-									<span class="rls">3</span>
-									568
-								</td>
+								<td>{{ index $cnt.CountersByResponseCode 4 }}</td>
 							</tr>
 							<tr>
 								<th>- HTTP 5xx responses:</th>
-								<td>402</td>
+								<td>{{ index $cnt.CountersByResponseCode 5 }}</td>
 							</tr>
 							<tr>
 								<th>- other responses:</th>
-								<td>622</td>
-							</tr>
-							<tr>
-								<th>Intercepted requests:</th>
-								<td>0</td>
-							</tr>
-							<tr>
-								<th colspan=3>Avg over last 1024 success. conn.</th>
-							</tr>
-							<tr>
-								<th>- Queue time:</th>
-								<td>0</td>
-								<td>ms</td>
-							</tr>
-							<tr>
-								<th>- Connect time:</th>
-								<td>0</td>
-								<td>ms</td>
-							</tr>
-							<tr>
-								<th>- Response time:</th>
-								<td>5</td>
-								<td>ms</td>
-							</tr>
-							<tr>
-								<th>- Total time:</th>
-								<td>888</td>
-								<td>ms</td>
+								<td>{{ index $cnt.CountersByResponseCode 0 }}</td>
 							</tr>
 						</table>
 					</div>
 				</u>
 			</td>
-			<td>XXX</td>
-			<td>XXX</td>
-			<td>XXX</td>
-			<td>
-				XXX
-				<div class=tips>compression: in=0 out=0 bypassed=0 savings=0%</div>
-			</td>
+			<td>{{ .RateLimiter.LastPacket | age }}</td>
 			<td>17</td>
 			<td>7</td>
 			<td></td>

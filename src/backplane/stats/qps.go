@@ -25,12 +25,14 @@ type RateLimiter interface {
 
 	// CurrentQPS returns current EMA of QPS
 	CurrentQPS() int64
+
+	LastPacket() time.Time
 }
 
 //NewRateLimiter constructs a new EMA rate limiter with specified EMA cutoff
 func NewRateLimiter(maxQPS float64) RateLimiter {
 	if maxQPS < 0.1 {
-		maxQPS = 100000
+		maxQPS = 1000000
 	}
 	return &emaRateLimiter{
 		timeOfLastRequest: time.Now().UnixNano(),
@@ -72,7 +74,7 @@ less than target req weight we drop the request
 // If accepted, the EMA rate limiter updates its current EMA
 func (e *emaRateLimiter) Accepted() bool {
 	now := time.Now().UnixNano()
-	instWaiting := now - e.timeOfLastRequest
+	instWaiting := now - atomic.LoadInt64(&e.timeOfLastRequest)
 	for {
 		avgWaitingNs := atomic.LoadInt64(&e.avgWaitingNs)
 		newavgWaitingNs := int64((1.-wq)*float64(avgWaitingNs) + wq*float64(instWaiting))
@@ -125,4 +127,8 @@ func (e *emaRateLimiter) TotalRejectedCount() int64 {
 // CurrentQPS returns current EMA of QPS
 func (e *emaRateLimiter) CurrentQPS() int64 {
 	return iNanosInSeconds / atomic.LoadInt64(&e.avgWaitingNs)
+}
+
+func (e *emaRateLimiter) LastPacket() time.Time {
+	return time.Unix(0, atomic.LoadInt64(&e.timeOfLastRequest))
 }
